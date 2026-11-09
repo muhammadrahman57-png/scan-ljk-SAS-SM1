@@ -15,6 +15,14 @@ canvas{max-width:100%;height:auto;border:1px solid var(--bd);border-radius:8px;b
 @media print{body *{visibility:hidden}#sheetBox,#sheetBox *{visibility:visible}#sheetBox{position:absolute;left:0;top:0;width:100%}#sheetBox canvas{width:100%;border:0}}
 nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}[hidden]{display:none!important}input[list],#sn,#sd{margin:2px 0}.sub{margin:6px 0}
 #mpb button,#smb button{padding:7px 11px;font-size:14px}
+#camBox{margin-top:10px;border:1px solid var(--bd);border-radius:12px;padding:10px}
+#camW{position:relative;background:#000;border-radius:8px;overflow:hidden;line-height:0;max-width:560px;margin:8px auto 0}
+#camV{width:100%;display:block;background:#000}
+#camO{position:absolute;left:0;top:0;width:100%;height:100%;border:0;border-radius:0;background:transparent;pointer-events:none}
+#camSt{margin:8px 0;font-size:14px;font-weight:600;min-height:21px}
+#camRes{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+#camRes canvas{width:110px;max-width:none}
+.big{font-size:38px;font-weight:700;line-height:1.1}
 </style></head><body><main><h1>Koreksi LJK Sumatif</h1>
 <nav><button data-t="scan" onclick="tab('scan')">Scan</button><button class="g" data-t="siswa" onclick="tab('siswa')">Data Siswa</button><button class="g" data-t="nilai" onclick="tab('nilai')">Daftar Nilai</button><button class="g" data-t="sheet" onclick="tab('sheet')">Spreadsheet</button><button class="g" data-t="reset" onclick="tab('reset')">Reset</button></nav>
 <div class="m" id="st" style="margin-bottom:8px"></div>
@@ -29,8 +37,15 @@ nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}[hidden]{display:none!
 <div class="r"><button onclick="print()">Cetak LJK</button></div><div id="sheetBox" style="margin-top:10px"><canvas id="sheet" width="1400" height="1980" style="max-width:300px"></canvas></div></div>
 <div class="c"><h2>3. Scan lembar jawaban</h2>
 <div class="m">Foto tegak lurus dari atas, cahaya merata, 4 kotak sudut terlihat penuh. Boleh miring/terbalik.</div>
-<div class="r"><label class="b">Ambil foto / pilih gambar<input id="file" type="file" accept="image/*" capture="environment" hidden></label><button class="g" id="test">Uji akurasi otomatis</button></div>
+<div class="r"><button id="camOpen">Scan langsung (kamera)</button><label class="b">Upload foto<input id="file" type="file" accept="image/*" hidden></label><button class="g" id="test">Uji akurasi otomatis</button></div>
 <div id="msg" class="m" style="margin-top:8px"></div>
+<div id="camBox" hidden>
+<div class="r" style="margin-top:0"><select id="camS" style="max-width:300px"></select><label class="m"><input type="checkbox" id="camA" checked> Lanjut otomatis ke siswa berikutnya</label></div>
+<div id="camRes" hidden><canvas id="crT" width="700" height="990"></canvas><div style="flex:1;min-width:150px"><div class="m" id="crN"></div><div class="big" id="crS"></div><div id="crD"></div><div class="r"><button class="g" id="camE">Periksa / edit jawaban</button></div></div></div>
+<div id="camW"><video id="camV" playsinline muted autoplay></video><canvas id="camO"></canvas></div>
+<div id="camSt"></div>
+<div class="r"><button id="camG">Ambil sekarang</button><button class="g" id="camF">Ganti kamera</button><button class="g" id="camT" hidden>Lampu</button><button class="g" id="camX">Tutup kamera</button></div>
+</div>
 <div id="res" hidden><canvas id="ov" width="700" height="990"></canvas>
 <div class="r"><select id="sw" style="max-width:300px"></select><b id="sc"></b></div>
 <div class="m">Kotak kuning = perlu dicek. Koreksi lewat pilihan jika tidak sesuai kertas. Setelah disimpan, nilai langsung masuk Daftar Nilai.</div>
@@ -223,4 +238,137 @@ const gr=c.createLinearGradient(0,0,1100,0);gr.addColorStop(0,'rgba(0,0,0,0)');g
 try{const r=scan(bg);m.forEach((v,i)=>{tot++;if(r.ans[i]===(v<0?'-':L[v]))ok++;else err.push('T'+(t+1)+' no'+(i+1))})}catch(e){tot+=N;err.push('T'+(t+1)+': '+e.message)}}
 key=sv;$('msg').innerHTML='<b class="'+(ok===tot?'ok':'no')+'">Uji akurasi: '+ok+' / '+tot+' benar</b> (4 simulasi: miring 4°, miring 14°, terbalik, diputar 90°, dengan bayangan)'+(err.length?'<br>Salah: '+err.slice(0,8).join(', '):'')};
 tab('scan');
+</script>
+<script>
+(()=>{
+const NEED=5,sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const V=$('camV'),O=$('camO'),oc=O.getContext('2d'),stt=t=>{$('camSt').textContent=t};
+let stream=null,facing='environment',timer=0,busy=false,state='scan',stable=0,last=null,gone=0,dc=null,dx=null,ds=1,torchOn=false,aud=null,lastSid='';
+const has=id=>nil.some(r=>r.sid===id&&r.mapel===mapel);
+const nm=id=>{const s=siswa.find(x=>x.id===id);return s?s.nama:''};
+const nextS=cur=>{const i=cur?siswa.findIndex(s=>s.id===cur):-1;const ord=[...siswa.slice(i+1),...siswa.slice(0,i+1)];const f=ord.find(s=>s.id!==cur&&!has(s.id));return f?f.id:null};
+function fillCsw(){const s=$('camS'),c=s.value;s.innerHTML='<option value="">— pilih siswa —</option>'+siswa.map(x=>`<option value="${x.id}">${has(x.id)?'✓ ':''}${esc(x.nama)} (${x.nisn})</option>`).join('');if(c&&siswa.some(x=>x.id===c))s.value=c}
+const _fs=fillSel;fillSel=function(){_fs();fillCsw()};
+const _tb=tab;tab=function(t){if(t!=='scan')close();_tb(t)};
+
+function detect(w,h){
+const d=dx.getImageData(0,0,w,h).data,g=new Float32Array(w*h);
+for(let i=0;i<w*h;i++)g[i]=.299*d[4*i]+.587*d[4*i+1]+.114*d[4*i+2];
+const b=thr(g,w,h,Math.max(41,(Math.max(w,h)/8)|1),.7),C=blobs(b,w,h,.16*Math.max(w,h));
+if(C.length<4)return null;
+const pk=f=>C.reduce((m,c)=>f(c)<f(m)?c:m),E=[pk(c=>c.x+c.y),pk(c=>-(c.x-c.y)),pk(c=>-(c.x+c.y)),pk(c=>c.x-c.y)];
+if(new Set(E).size<4)return null;
+const cx=E.reduce((a,c)=>a+c.x,0)/4,cy=E.reduce((a,c)=>a+c.y,0)/4;
+E.sort((p,q)=>Math.atan2(p.y-cy,p.x-cx)-Math.atan2(q.y-cy,q.x-cx));
+let bi=0;E.forEach((e,i)=>{if(e.a>E[bi].a)bi=i});const o=[0,1,2,3].map(i=>E[(bi+i)%4]);
+const rest=o.slice(1).map(e=>e.a).sort((a,b)=>a-b)[1];if(o[0].a/rest<1.3)return null;
+return o}
+
+function guide(vw,vh){let gw=vw*.9,gh=gw/.707;if(gh>vh*.9){gh=vh*.9;gw=gh*.707}
+oc.save();oc.setLineDash([16,12]);oc.lineWidth=Math.max(3,vw/300);oc.strokeStyle='rgba(255,255,255,.75)';oc.strokeRect((vw-gw)/2,(vh-gh)/2,gw,gh);oc.restore()}
+function draw(q,col){oc.lineWidth=Math.max(4,O.width/220);oc.strokeStyle=col;oc.fillStyle=col;oc.beginPath();q.forEach((e,i)=>i?oc.lineTo(e.x,e.y):oc.moveTo(e.x,e.y));oc.closePath();oc.stroke();
+const r=Math.max(8,O.width/90);q.forEach(e=>{oc.beginPath();oc.arc(e.x,e.y,r,0,7);oc.fill()})}
+
+function step(){
+if(state==='proc')return;
+const vw=V.videoWidth,vh=V.videoHeight;if(!vw||!dx)return;
+dx.drawImage(V,0,0,dc.width,dc.height);
+const p=detect(dc.width,dc.height);
+oc.clearRect(0,0,vw,vh);
+if(state==='wait'){if(p)gone=0;else if(++gone>=3){state='scan';stable=0;last=null;const sid=$('camS').value;stt(sid?'Siap. Tampilkan lembar milik '+nm(sid)+'.':'Pilih siswa lalu tampilkan lembar.')}return}
+if(!p){stable=0;last=null;guide(vw,vh);stt('Mencari 4 kotak hitam sudut… posisikan lembar dalam bingkai.');return}
+const sc=1/ds,q=p.map(e=>({x:e.x*sc,y:e.y*sc}));
+const ed=[0,1,2,3].map(i=>Math.hypot(q[(i+1)%4].x-q[i].x,q[(i+1)%4].y-q[i].y));
+const w1=(ed[0]+ed[2])/2,h1=(ed[1]+ed[3])/2,ratio=h1/w1,need=Math.min(560,.78*Math.min(vw,vh)),mg=6;
+let ok=true,msg='';
+if(q.some(e=>e.x<mg||e.y<mg||e.x>vw-mg||e.y>vh-mg)){ok=false;msg='Sebagian lembar terpotong. Mundurkan kamera sedikit.'}
+else if(ratio<1.15||ratio>1.85){ok=false;msg='Posisi terlalu miring. Luruskan kamera tepat di atas lembar.'}
+else if(h1<need){ok=false;msg='Terlalu jauh. Dekatkan kamera sampai lembar memenuhi layar.'}
+if(ok){if(last){const dm=Math.max(...q.map((e,i)=>Math.hypot(e.x-last[i].x,e.y-last[i].y)));stable=dm<.012*Math.max(vw,vh)?Math.min(stable+1,NEED):1}else stable=1;last=q}else{stable=0;last=null}
+draw(q,!ok?'#cf222e':stable>=NEED?'#1a7f37':'#d29922');
+if(!ok){stt(msg);return}
+if(stable<NEED){stt('Lembar terdeteksi. Tahan kamera tetap… '+stable+'/'+NEED);return}
+const sid=$('camS').value;
+if(!sid){stt('Pilih siswa dulu.');return}
+if(has(sid)){stt(nm(sid)+' sudah punya nilai. Pilih siswa lain, atau tekan "Ambil sekarang" untuk menimpa.');return}
+grab()}
+
+async function grab(){
+if(state==='proc')return;
+if(key.length!==N){stt('Kunci jawaban belum 40 huruf.');return}
+const sid=$('camS').value;if(!sid){stt('Pilih siswa dulu.');return}
+state='proc';stt('Memproses… tahan kamera tetap.');
+const vw=V.videoWidth,vh=V.videoHeight,c=document.createElement('canvas');c.width=vw;c.height=vh;const cx=c.getContext('2d'),rs=[];let er='';
+for(let i=0;i<3;i++){cx.drawImage(V,0,0,vw,vh);try{rs.push(scan(c))}catch(e){er=e.message}await sleep(80)}
+if(!stream)return;
+if(rs.length<2){state='scan';stable=0;last=null;stt('Gagal membaca: '+(er||'gambar kurang jelas')+' Coba lagi.');return}
+const ans=[],flag=[];
+for(let q=0;q<N;q++){const cnt={};rs.forEach(r=>{cnt[r.ans[q]]=(cnt[r.ans[q]]||0)+1});
+const e=Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
+ans.push(e[0][1]>=2?e[0][0]:'*');flag.push(rs.some(r=>r.flag[q])||e.length>1||e[0][1]<2)}
+const terbaca=ans.filter(a=>a!=='-'&&a!=='*').length;
+if(terbaca<5){state='scan';stable=0;last=null;stt('Hanya '+terbaca+' jawaban terbaca. Periksa cahaya dan posisi, lalu coba lagi.');return}
+const ow=has(sid),rw={sid,mapel,...nilai(ans),ans:ans.slice(),sent:false},ex=nil.findIndex(r=>r.sid===sid&&r.mapel===mapel);
+if(ex>=0)nil[ex]=rw;else nil.push(rw);persist();
+lastSid=sid;beep();showRes(rw,{ans,flag,wg:rs[0].wg},ow);sendN(rw);fillSel();
+let m='Tersimpan: '+nm(sid)+' = '+rw.n+'. ';
+if($('camA').checked){const n=nextS(sid);if(n){$('camS').value=n;m+='Berikutnya: '+nm(n)+'. Angkat lembar ini, lalu tampilkan lembar berikutnya.'}else m+='Semua siswa sudah dinilai.'}else m+='Angkat lembar ini.';
+state='wait';gone=0;stt(m)}
+
+function showRes(rw,r,ow){
+const nf=r.flag.filter(Boolean).length;
+$('camRes').hidden=false;
+$('crN').textContent=nm(rw.sid)+' · '+mapel;
+$('crS').innerHTML='<span class="m" style="font-size:13px;font-weight:400">Nilai (skala 0–100)</span><br><span class="'+(rw.n>=70?'ok':'no')+'">'+rw.n+'</span>';
+$('crD').innerHTML='Benar <b>'+rw.r+'</b> dari '+N+' · Salah '+rw.s+' · Kosong '+rw.k+'<br><span class="m">Tersimpan ke Daftar Nilai '+esc(mapel)+(ow?' (menimpa nilai lama)':'')+(nf?' · '+nf+' nomor ragu, periksa jika perlu':'')+'</span>';
+const c=$('crT').getContext('2d'),im=c.createImageData(CW,CH);
+for(let i=0;i<CW*CH;i++){const v=r.wg[i];im.data[4*i]=im.data[4*i+1]=im.data[4*i+2]=v;im.data[4*i+3]=255}
+c.putImageData(im,0,0);const K=parseKey();c.lineWidth=3;
+for(let q=0;q<N;q++){if(r.flag[q]){c.strokeStyle='#d29922';c.strokeRect(bub(q,0)[0]-18,bub(q,0)[1]-16,102,32)}
+const o=L.indexOf(r.ans[q]);if(o>=0){const[x,y]=bub(q,o);c.strokeStyle=r.ans[q]===K[q]?'#1a7f37':'#cf222e';c.beginPath();c.arc(x,y,15,0,7);c.stroke()}}}
+
+function beep(){try{aud=aud||new(window.AudioContext||window.webkitAudioContext)();const o=aud.createOscillator(),g=aud.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(aud.destination);o.start();o.stop(aud.currentTime+.12)}catch(e){}try{navigator.vibrate&&navigator.vibrate(80)}catch(e){}}
+
+function loop(){clearTimeout(timer);if(!stream)return;timer=setTimeout(tick,180)}
+function tick(){if(!stream)return;if(busy||V.readyState<2){loop();return}busy=true;try{step()}catch(e){}busy=false;loop()}
+function stop(){clearTimeout(timer);timer=0;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}V.srcObject=null;torchOn=false}
+function close(){stop();state='scan';$('camBox').hidden=true}
+
+async function start(){
+stop();
+try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:1920},height:{ideal:1080}},audio:false})}
+catch(e){$('camBox').hidden=true;$('msg').textContent='Kamera tidak bisa dibuka: '+(e.name==='NotAllowedError'?'izin kamera ditolak. Izinkan kamera di pengaturan browser.':e.message);return}
+V.srcObject=stream;try{await V.play()}catch(e){}
+const tr=stream.getVideoTracks()[0];
+try{const cp=tr.getCapabilities?tr.getCapabilities():{};
+if(cp.focusMode&&cp.focusMode.includes('continuous'))await tr.applyConstraints({advanced:[{focusMode:'continuous'}]});
+$('camT').hidden=!cp.torch}catch(e){$('camT').hidden=true}
+for(let i=0;i<40&&!V.videoWidth;i++)await sleep(100);
+const vw=V.videoWidth,vh=V.videoHeight;
+if(!vw){close();$('msg').textContent='Kamera tidak mengirim gambar. Coba lagi atau gunakan Upload foto.';return}
+ds=Math.min(1,960/Math.max(vw,vh));
+dc=document.createElement('canvas');dc.width=Math.round(vw*ds);dc.height=Math.round(vh*ds);dx=dc.getContext('2d',{willReadFrequently:true});
+O.width=vw;O.height=vh;state='scan';stable=0;last=null;gone=0;
+stt('Arahkan kamera ke lembar jawaban. Pastikan 4 kotak hitam sudut terlihat.');
+loop()}
+
+async function open(){
+if(!mapel){$('msg').textContent='Pilih mata pelajaran dulu.';return}
+if(key.length!==N){$('msg').textContent='Isi kunci jawaban 40 huruf dulu.';return}
+if(!siswa.length){$('msg').textContent='Tambahkan siswa dulu di menu Data Siswa.';return}
+if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){$('msg').textContent='Kamera tidak tersedia di sini. Buka lewat alamat https:// atau gunakan Upload foto.';return}
+try{aud=aud||new(window.AudioContext||window.webkitAudioContext)();aud.resume&&aud.resume()}catch(e){}
+$('res').hidden=true;$('msg').textContent='';$('camBox').hidden=false;$('camRes').hidden=true;fillCsw();
+const cs=$('camS').value;if(!cs||has(cs)){const n=nextS(cs||null);if(n)$('camS').value=n}
+await start();$('camBox').scrollIntoView({block:'nearest'})}
+
+$('camOpen').onclick=open;
+$('camX').onclick=close;
+$('camG').onclick=()=>{if(!stream||state==='proc')return;grab()};
+$('camF').onclick=()=>{facing=facing==='environment'?'user':'environment';start()};
+$('camT').onclick=async()=>{if(!stream)return;torchOn=!torchOn;try{await stream.getVideoTracks()[0].applyConstraints({advanced:[{torch:torchOn}]})}catch(e){torchOn=!torchOn}};
+$('camE').onclick=()=>{if(!lastSid)return;const id=lastSid;close();sm=mapel;editN(id)};
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&stream)close()});
+fillCsw();
+})();
 </script></body></html>
