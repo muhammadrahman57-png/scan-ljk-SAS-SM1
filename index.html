@@ -99,8 +99,8 @@ c.font='15px sans-serif';c.textAlign='left';c.fillText('Nama      : ............
 c.textAlign='center';c.font='bold 14px sans-serif';
 for(let k=0;k<4;k++)for(let o=0;o<4;o++)c.fillText(L[o],bub(k*10,o)[0],176);
 for(let q=0;q<N;q++){const x0=60+Math.floor(q/10)*150;c.textAlign='right';c.font='14px sans-serif';c.fillText(q+1,x0+22,bub(q,0)[1]+5);
-for(let o=0;o<4;o++){const[x,y]=bub(q,o);c.beginPath();c.arc(x,y,12,0,7);c.lineWidth=2;c.strokeStyle='#000';c.stroke();
-if(marks&&marks[q]===o){c.beginPath();c.arc(x,y,10,0,7);c.fillStyle='#222';c.fill();c.fillStyle='#000'}}}
+for(let o=0;o<4;o++){const[x,y]=bub(q,o);c.beginPath();c.arc(x,y,5.7,0,7);c.lineWidth=2;c.strokeStyle='#000';c.stroke();
+if(marks&&marks[q]===o){c.beginPath();c.arc(x,y,4.6,0,7);c.fillStyle='#222';c.fill();c.fillStyle='#000'}}}
 c.textAlign='center';c.font='13px sans-serif';c.fillText('Hitamkan satu bulatan saja per nomor. Jangan melipat/merobek kotak hitam di sudut.',350,760)}
 drawSheet($('sheet').getContext('2d'),null,2);
 function thr(g,w,h,win,k){const W=w+1,I=new Float64Array(W*(h+1));
@@ -140,7 +140,7 @@ for(let y=0;y<CH;y++)for(let x=0;x<CW;x++){const z=H[6]*x+H[7]*y+1,u=Math.round(
 if(u>=0&&v>=0&&u<w&&v<h)wg[y*CW+x]=g[v*w+u]}
 const wb=thr(wg,CW,CH,121,.78),ans=[],flag=[],fills=[];
 for(let q=0;q<N;q++){const f=[];for(let k=0;k<4;k++){const[x,y]=bub(q,k);let t=0,n=0;
-for(let j=-7;j<=7;j++)for(let i=-7;i<=7;i++)if(i*i+j*j<=49){n++;t+=wb[(y+j)*CW+x+i]}f.push(t/n)}
+for(let j=-4;j<=4;j++)for(let i=-4;i<=4;i++)if(i*i+j*j<=12){n++;t+=wb[(y+j)*CW+x+i]}f.push(t/n)}
 fills.push(f);const mk=f.filter(v=>v>.45).length,bd=f.some(v=>v>.2&&v<=.45);
 const top=f.indexOf(Math.max(...f));ans.push(mk===1?L[top]:mk===0?'-':'*');flag.push(mk!==1||bd)}
 return{ans,flag,fills,wg}}
@@ -150,7 +150,7 @@ return{r,k,s:N-r-k,n:Math.round(r/N*1000)/10}}
 let cur=null;
 function show(){const{ans,flag}=cur,c=$('ov').getContext('2d');if(cur.wg){const im=c.createImageData(CW,CH);for(let i=0;i<CW*CH;i++){const v=cur.wg[i];im.data[4*i]=im.data[4*i+1]=im.data[4*i+2]=v;im.data[4*i+3]=255}c.putImageData(im,0,0)}else drawSheet(c,null,1);c.setTransform(1,0,0,1,0,0);const K=parseKey();c.lineWidth=3;
 for(let q=0;q<N;q++){if(flag[q]){c.strokeStyle='#d29922';c.strokeRect(bub(q,0)[0]-18,bub(q,0)[1]-16,102,32)}
-const o=L.indexOf(ans[q]);if(o>=0){const[x,y]=bub(q,o);c.strokeStyle=ans[q]===K[q]?'#1a7f37':'#cf222e';c.beginPath();c.arc(x,y,15,0,7);c.stroke()}}
+const o=L.indexOf(ans[q]);if(o>=0){const[x,y]=bub(q,o);c.strokeStyle=ans[q]===K[q]?'#1a7f37':'#cf222e';c.beginPath();c.arc(x,y,9,0,7);c.stroke()}}
 const n=nilai(ans);$('sc').innerHTML='Benar '+n.r+' · Salah '+n.s+' · Kosong '+n.k+' · Nilai <span class="'+(n.n>=70?'ok':'no')+'">'+n.n+'</span>';
 document.querySelectorAll('#grid label').forEach((l,i)=>l.className=flag[i]?'f':'')}
 function render(r){cur=r;$('res').hidden=false;const g=$('grid');g.innerHTML='';
@@ -381,7 +381,7 @@ const c=$('crT').getContext('2d'),im=c.createImageData(CW,CH);
 for(let i=0;i<CW*CH;i++){const v=r.wg[i];im.data[4*i]=im.data[4*i+1]=im.data[4*i+2]=v;im.data[4*i+3]=255}
 c.putImageData(im,0,0);const K=parseKey();c.lineWidth=3;
 for(let q=0;q<N;q++){if(r.flag[q]){c.strokeStyle='#d29922';c.strokeRect(bub(q,0)[0]-18,bub(q,0)[1]-16,102,32)}
-const o=L.indexOf(r.ans[q]);if(o>=0){const[x,y]=bub(q,o);c.strokeStyle=r.ans[q]===K[q]?'#1a7f37':'#cf222e';c.beginPath();c.arc(x,y,15,0,7);c.stroke()}}}
+const o=L.indexOf(r.ans[q]);if(o>=0){const[x,y]=bub(q,o);c.strokeStyle=r.ans[q]===K[q]?'#1a7f37':'#cf222e';c.beginPath();c.arc(x,y,9,0,7);c.stroke()}}}
 
 function beep(){try{aud=aud||new(window.AudioContext||window.webkitAudioContext)();const o=aud.createOscillator(),g=aud.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(aud.destination);o.start();o.stop(aud.currentTime+.12)}catch(e){}try{navigator.vibrate&&navigator.vibrate(80)}catch(e){}}
 
