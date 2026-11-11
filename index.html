@@ -29,7 +29,7 @@ nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}[hidden]{display:none!
 <section class="tb" id="t-scan">
 <div class="c"><h2>1. Mata pelajaran &amp; kunci jawaban</h2>
 <div class="m" style="margin-bottom:6px">Pilih mata pelajaran. Kunci jawaban tersimpan terpisah untuk tiap mata pelajaran.</div><div class="r" id="mpb" style="margin:0 0 8px"></div><input type="hidden" id="mp">
-<textarea id="key" rows="2" placeholder="Ketik 40 huruf kunci, contoh: ABCDABCD..." style="margin-top:6px"></textarea><div class="m" id="kc"></div><div class="r" style="margin-top:4px"><span class="m" id="ksync" style="flex:1"></span><button class="g" id="ksyncB" type="button">Sinkronkan kunci</button></div></div>
+<textarea id="key" rows="2" placeholder="Ketik 40 huruf kunci, contoh: ABCDABCD..." style="margin-top:6px"></textarea><div class="m" id="kc"></div><div class="r" style="margin-top:4px"><span class="m" id="ksync" style="flex:1"></span><button class="g" id="ksyncB" type="button">Sinkronkan data</button></div></div>
 <div class="c"><h2>2. Judul &amp; cetak lembar jawaban (LJK)</h2>
 <div class="m">Judul otomatis memuat mata pelajaran dari kolom di atas. Tulis {mapel} di judul jika ingin nama mapel ikut di judul.</div>
 <input type="text" id="tjd" placeholder="Judul LJK" style="margin-top:6px"><div class="r"><input type="text" id="tsk" placeholder="Nama sekolah" style="max-width:260px"><input type="text" id="tkl" placeholder="Kelas" style="max-width:80px"><input type="text" id="tsm" placeholder="Semester / Tahun ajaran" style="max-width:240px"></div>
@@ -59,13 +59,14 @@ nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}[hidden]{display:none!
 </section>
 <section class="tb" id="t-nilai" hidden>
 <div class="r sub"><button id="s-mp" onclick="sub='mp';rnil()">Per Mata Pelajaran</button><button class="g" id="s-rk" onclick="sub='rk';rnil()">Rekap Nilai</button></div>
-<div class="c" id="v-mp"><div class="r" id="smb" style="margin:0 0 8px"></div><div class="r"><button class="g" onclick="cp(mpM())">Salin untuk Spreadsheet</button></div>
+<div class="r" style="margin:0 0 8px"><span class="m" id="nsync" style="flex:1"></span><button class="g" id="nsyncB" type="button">Sinkronkan data</button></div>
+<div class="c" id="v-mp"><div class="r" id="smb" style="margin:0 0 8px"></div><div class="r"><button class="g" onclick="cp(mpM())">Salin untuk Spreadsheet</button><button class="g" id="sendM" type="button">Kirim ke Sheet</button></div>
 <div class="m" id="ss" style="margin:8px 0"></div><div class="tw"><table id="tn"></table></div></div>
-<div class="c" id="v-rk" hidden><div class="r"><button class="g" onclick="cp(matrix())">Salin Rekap</button><button class="g" id="sendR">Kirim Rekap ke Sheet</button></div><div class="tw" style="margin-top:8px"><table id="tr"></table></div></div>
+<div class="c" id="v-rk" hidden><div class="r"><button class="g" onclick="cp(matrix())">Salin Rekap</button><button class="g" id="sendR" type="button">Kirim Rekap ke Sheet</button></div><div class="tw" style="margin-top:8px"><table id="tr"></table></div></div>
 <textarea id="tsv" rows="3" hidden></textarea>
 </section>
 <section class="tb" id="t-sheet" hidden><div class="c"><h2>Hubungkan Google Sheets</h2>
-<div class="m">Tempel URL Web App Apps Script dan token dari Code.gs. Data dikirim ke tab Siswa, Nilai, dan Rekap.</div>
+<div class="m">Tempel URL Web App Apps Script dan token dari Code.gs. Data tersinkron otomatis antar perangkat: tab Siswa, Nilai, dan Kunci. Tab Rekap dan &quot;Nilai - (nama mapel)&quot; dibuat otomatis dari data tersebut. Gunakan URL dan token yang sama di semua perangkat.</div>
 <div class="r"><input type="text" id="url" placeholder="https://script.google.com/macros/s/.../exec"><input type="text" id="tok" placeholder="Token (sama dengan di Code.gs)" style="max-width:260px"><button class="g" id="ping">Tes koneksi</button><button class="g" id="resend">Kirim yang belum terkirim</button></div></div></section>
 <section class="tb" id="t-reset" hidden><div class="c"><h2>Reset &amp; isi ulang</h2>
 <div class="m">Salah scan? Untuk satu siswa: buka <b>Daftar Nilai</b> lalu klik <b>Edit</b> (ubah jawaban) atau scan ulang lalu simpan (nilai lama ditimpa). Untuk menghapus banyak data sekaligus, pakai tombol di bawah.</div>
@@ -163,7 +164,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const mps=()=>MAPEL,avg=a=>a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length*10)/10:'';
 let sub='mp',sm='',url=localStorage.getItem('lj_url')||'',tok=localStorage.getItem('lj_tok')||'';
 function tab(t){document.querySelectorAll('.tb').forEach(e=>e.hidden=e.id!=='t-'+t);document.querySelectorAll('nav button').forEach(b=>b.className=b.dataset.t===t?'':'g');
-if(t==='reset')fillRm();if(t==='nilai')rnil();if(t==='siswa')rsis();if(t==='scan'){fillSel();fillDl();redraw()}}
+if(t==='reset')fillRm();if(t==='nilai'){rnil();kSync()}if(t==='siswa'){rsis();kSync()}if(t==='scan'){fillSel();fillDl();redraw()}}
 function fillDl(){chips()}
 function fillSel(){$('sw').innerHTML='<option value="">— pilih siswa —</option>'+siswa.map(s=>`<option value="${s.id}">${nil.some(r=>r.sid===s.id&&r.mapel===mapel)?'✓ ':''}${esc(s.nama)} (${s.nisn})</option>`).join('')}
 const kc=()=>{key=$('key').value.toUpperCase().replace(/[^A-D]/g,'');$('kc').textContent=key.length+' / 40 huruf'+(key.length===N?' ✓':' (harus 40)');if(mapel){if((keys[mapel]||'')!==key){keys[mapel]=key;keysTs[mapel]=Date.now();kPush(mapel)}else keys[mapel]=key;persist()}};
@@ -181,14 +182,14 @@ $('imp').onclick=()=>{let ok=0;const er=[],add=[];$('it').value.split('\n').forE
 persist();rsis();$('it').value='';say(ok+' siswa diimpor'+(er.length?'; gagal: '+er.slice(0,4).join(' | '):''));(async()=>{for(const s of add)await sendS(s)})()};
 function rsis(){$('ts').innerHTML='<tr><th>No</th><th>Nama</th><th>NISN</th><th>Sheet</th><th></th></tr>'+siswa.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.nama)}</td><td>${s.nisn}</td><td>${s.sent?'✓':'–'}</td><td><button class="g" onclick="delS('${s.id}')">Hapus</button></td></tr>`).join('');$('cnt').textContent='('+siswa.length+')'}
 async function delS(id){const s0=siswa.find(s=>s.id===id);if(!s0||!confirm('Hapus siswa ini beserta semua nilainya? (Di Google Sheets juga dihapus jika terhubung)'))return;siswa=siswa.filter(s=>s.id!==id);nil=nil.filter(r=>r.sid!==id);persist();rsis();
-if(url){try{await post({type:'hapusSiswa',nisn:s0.nisn});say('Siswa dihapus (termasuk di Sheets).')}catch(e){say('Dihapus di aplikasi, gagal di Sheets: '+e.message)}}}
+if(url){try{await post({type:'hapusSiswa',nisn:s0.nisn});say('Siswa dihapus (termasuk di Sheets).');lapPush()}catch(e){say('Dihapus di aplikasi, gagal di Sheets: '+e.message)}}}
 async function delN(id){const s0=siswa.find(s=>s.id===id);if(!confirm('Hapus nilai ini? (Di Google Sheets juga dihapus jika terhubung)'))return;nil=nil.filter(r=>!(r.sid===id&&r.mapel===sm));persist();rnil();
-if(url&&s0){try{await post({type:'hapusNilai',nisn:s0.nisn,mapel:sm});say('Nilai dihapus (termasuk di Sheets).')}catch(e){say('Dihapus di aplikasi, gagal di Sheets: '+e.message)}}}
+if(url&&s0){try{await post({type:'hapusNilai',nisn:s0.nisn,mapel:sm});say('Nilai dihapus (termasuk di Sheets).');lapPush()}catch(e){say('Dihapus di aplikasi, gagal di Sheets: '+e.message)}}}
 function editN(id){const r=nil.find(x=>x.sid===id&&x.mapel===sm);if(!r)return;mapel=r.mapel;key=keys[mapel]||'';$('mp').value=mapel;$('key').value=key;kc();tab('scan');fillSel();$('sw').value=id;
 render({ans:r.ans.slice(),flag:Array(N).fill(false),edit:true});$('msg').textContent='Mode edit: ubah jawaban yang salah, lalu Simpan. Nilai lama akan diganti.';$('res').scrollIntoView()}
 function fillRm(){if(!$('rm').value)$('rm').value=mapel;$('rmb').innerHTML=MAPEL.map(x=>`<button class="${x===$('rm').value?'':'g'}" data-m="${esc(x)}" onclick="$('rm').value=this.dataset.m;fillRm()">${esc(x)}</button>`).join('')}
 async function rst(ask,fn,p){if(!confirm(ask))return;fn();persist();let t='Reset selesai di aplikasi.';
-if($('rs').checked&&url){try{await post(p);t+=' Data di Google Sheets juga dihapus.'}catch(e){t+=' Gagal menghapus di Sheets: '+e.message}}say(t);fillSel();fillDl();fillRm();rnil();rsis()}
+if($('rs').checked&&url){try{await post(p);t+=' Data di Google Sheets juga dihapus.';lapPush()}catch(e){t+=' Gagal menghapus di Sheets: '+e.message}}say(t);fillSel();fillDl();fillRm();rnil();rsis()}
 $('rN').onclick=()=>{const m=$('rm').value;if(!m){say('Belum ada mata pelajaran.');return}rst('Hapus SEMUA nilai '+m+'? Tidak bisa dibatalkan.',()=>{nil=nil.filter(r=>r.mapel!==m)},{type:'resetNilai',mapel:m})};
 $('rA').onclick=()=>rst('Hapus SEMUA nilai semua mapel? (data siswa tetap)',()=>{nil=[]},{type:'resetNilai'});
 $('rS').onclick=()=>rst('Hapus SEMUA data siswa beserta nilainya?',()=>{siswa=[];nil=[]},{type:'resetSiswa'});
@@ -214,17 +215,19 @@ async function cp(M){const t=M.map(r=>r.join('\t')).join('\n');try{await navigat
 $('url').value=url;$('tok').value=tok;
 $('url').oninput=$('tok').oninput=()=>{url=$('url').value.trim();tok=$('tok').value.trim();localStorage.setItem('lj_url',url);localStorage.setItem('lj_tok',tok)};
 $('url').onchange=$('tok').onchange=()=>kSync();
+let lapT=0;function lapPush(){if(!url)return;clearTimeout(lapT);lapT=setTimeout(async()=>{try{await post({type:'laporan'})}catch(e){}},4000)}
 async function post(p){const res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:tok,...p})});const j=await res.json();if(!j.ok)throw Error(j.error||'ditolak');return j}
-async function sendS(s){if(!url)return;try{await post({type:'siswa',nisn:s.nisn,nama:s.nama});s.sent=true;persist();say('Siswa terkirim ke Sheets.')}catch(e){say('Siswa tersimpan, belum terkirim: '+e.message)}rsis()}
-async function sendN(r){const s=siswa.find(x=>x.id===r.sid);if(!url||!s)return;try{await post({type:'nilai',nisn:s.nisn,nama:s.nama,mapel:r.mapel,r:r.r,s:r.s,k:r.k,n:r.n,ans:r.ans});r.sent=true;persist();say('Nilai tersimpan dan terkirim ke Sheets.')}catch(e){say('Nilai tersimpan, BELUM terkirim ('+e.message+'). Gunakan "Kirim yang belum terkirim" di menu Spreadsheet.')}}
+async function sendS(s){if(!url)return;try{await post({type:'siswa',nisn:s.nisn,nama:s.nama});s.sent=true;s.st=Date.now();persist();say('Siswa terkirim ke Sheets.');lapPush()}catch(e){say('Siswa tersimpan, belum terkirim: '+e.message)}rsis()}
+async function sendN(r){const s=siswa.find(x=>x.id===r.sid);if(!url||!s)return;try{await post({type:'nilai',nisn:s.nisn,nama:s.nama,mapel:r.mapel,r:r.r,s:r.s,k:r.k,n:r.n,ans:r.ans,t:r.t||Date.now()});r.sent=true;r.st=Date.now();persist();say('Nilai tersimpan dan terkirim ke Sheets.');lapPush()}catch(e){say('Nilai tersimpan, BELUM terkirim ('+e.message+'). Gunakan "Kirim yang belum terkirim" di menu Spreadsheet.')}}
 $('ping').onclick=async()=>{try{await post({type:'ping'});say('Koneksi ke Apps Script berhasil.')}catch(e){say('Koneksi gagal: '+e.message)}};
 
-const ks=t=>{const e=$('ksync');if(e)e.textContent=t},cleanK=v=>String(v||'').toUpperCase().replace(/[^A-D]/g,'');
+const ks=t=>{['ksync','nsync'].forEach(i=>{const e=$(i);if(e)e.textContent=t})},cleanK=v=>String(v||'').toUpperCase().replace(/[^A-D]/g,'');
 function kPush(m){if(!url){ks('Kunci hanya tersimpan di perangkat ini. Hubungkan Google Sheets (menu Spreadsheet) agar tersinkron.');return}
 clearTimeout(kTimer[m]);ks('Menyinkronkan kunci…');kTimer[m]=setTimeout(async()=>{try{await post({type:'kunciSimpan',mapel:m,kunci:keys[m]||'',ts:keysTs[m]||Date.now()});ks('Kunci tersinkron ✓')}catch(e){ks('Kunci tersimpan di perangkat ini, belum tersinkron: '+e.message)}},800)}
 async function kSync(){if(!url){ks('Kunci hanya tersimpan di perangkat ini. Hubungkan Google Sheets (menu Spreadsheet) agar tersinkron.');return}
 if(kBusy)return;kBusy=true;ks('Menyinkronkan kunci…');
-try{const j=await post({type:'kunciAmbil'}),rem={};(j.data||[]).forEach(r=>{const m=canon(r.mapel);if(m)rem[m]={k:cleanK(r.kunci),t:+r.ts||0}});
+try{let all=null;try{all=await post({type:'semuaAmbil'})}catch(e){if(!/tipe tidak dikenal/.test(e.message))throw e}
+const j=all?{data:all.kunci}:await post({type:'kunciAmbil'}),rem={};(j.data||[]).forEach(r=>{const m=canon(r.mapel);if(m)rem[m]={k:cleanK(r.kunci),t:+r.ts||0}});
 let ch=false;
 for(const m of MAPEL){const r=rem[m],lt=keysTs[m]||0,lk=keys[m]||'';
 if(r&&r.t>lt){if(lk!==r.k)ch=true;if(r.k)keys[m]=r.k;else delete keys[m];keysTs[m]=r.t}
@@ -232,17 +235,49 @@ else if(r&&lt>r.t){await post({type:'kunciSimpan',mapel:m,kunci:lk,ts:lt})}
 else if(!r&&lk){if(!lt)keysTs[m]=Date.now();await post({type:'kunciSimpan',mapel:m,kunci:lk,ts:keysTs[m]})}}
 persist();
 if(ch){key=keys[mapel]||'';$('key').value=key;kc();chips()}
-ks('Kunci tersinkron ✓'+(ch?' (diperbarui dari perangkat lain)':''))}
+let sm_='';
+try{const t0=Date.now(),fresh=localStorage.getItem('lj_surl')!==url,gid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const js=all?{data:all.siswa}:await post({type:'siswaAmbil'}),jn=all?{data:all.nilai}:await post({type:'nilaiAmbil'});
+let sc=0,sd=0,nc=0,nd=0;const rs=new Map(),rn=new Map();
+(js.data||[]).forEach(r=>{const n=String(r.nisn||'').replace(/\D/g,'');if(/^\d{10}$/.test(n))rs.set(n,String(r.nama||'').trim()||n)});
+(jn.data||[]).forEach(r=>{const n=String(r.nisn||'').replace(/\D/g,''),m=canon(r.mapel);if(/^\d{10}$/.test(n)&&m&&Array.isArray(r.ans)&&r.ans.length===N)rn.set(n+'|'+m,{nisn:n,nama:String(r.nama||'').trim(),mapel:m,r:+r.r||0,s:+r.s||0,k:+r.k||0,n:+r.n||0,ans:r.ans.map(a=>String(a||'-').slice(0,1)),ts:+r.ts||0})});
+rs.forEach((nm,n)=>{if(!siswa.some(x=>x.nisn===n)){siswa.push({id:gid(),nama:nm,nisn:n,sent:true,st:0});sc++}});
+rn.forEach(R=>{if(!siswa.some(x=>x.nisn===R.nisn)){siswa.push({id:gid(),nama:R.nama||R.nisn,nisn:R.nisn,sent:true,st:0});sc++}});
+for(const x of siswa.slice()){if(rs.has(x.nisn)||[...rn.values()].some(R=>R.nisn===x.nisn)){x.sent=true}
+else if(x.sent&&x.st>=t0){}
+else if(x.sent&&!fresh){siswa=siswa.filter(y=>y!==x);nil=nil.filter(r=>r.sid!==x.id);sd++}
+else x.sent=false}
+rn.forEach(R=>{const sw=siswa.find(x=>x.nisn===R.nisn),L=nil.find(x=>x.sid===sw.id&&x.mapel===R.mapel);
+const rec={sid:sw.id,mapel:R.mapel,r:R.r,s:R.s,k:R.k,n:R.n,ans:R.ans,sent:true,t:R.ts,st:0};
+if(!L){nil.push(rec);nc++}
+else if(L.sent&&R.ts>(L.t||0)&&L.ans.join('')!==R.ans.join('')){Object.assign(L,rec);nc++}
+else if(L.sent&&L.ans.join('')===R.ans.join('')&&!L.t)L.t=R.ts});
+for(const L of nil.slice()){const sw=siswa.find(x=>x.id===L.sid);if(!sw||rn.has(sw.nisn+'|'+L.mapel))continue;
+if(L.sent&&L.st>=t0)continue;
+if(L.sent&&!fresh){nil=nil.filter(y=>y!==L);nd++}else L.sent=false}
+persist();
+for(const x of siswa.filter(x=>!x.sent))await sendS(x);
+for(const r of nil.filter(r=>!r.sent))await sendN(r);
+localStorage.setItem('lj_surl',url);persist();if(fresh)lapPush();
+if(sc||sd||nc||nd){rsis();fillSel();rnil()}
+const dt=[];if(sc)dt.push(sc+' siswa baru');if(nc)dt.push(nc+' nilai baru/diperbarui');if(sd||nd)dt.push('dihapus: '+sd+' siswa, '+nd+' nilai (sudah dihapus di perangkat lain)');
+sm_=' Siswa & nilai tersinkron ✓'+(dt.length?' ('+dt.join('; ')+')':'')}
+catch(e){sm_=' Siswa/nilai belum tersinkron: '+e.message}
+ks('Kunci tersinkron ✓'+(ch?' (diperbarui dari perangkat lain)':'')+'.'+sm_+' ('+new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})+')')}
 catch(e){ks('Kunci tersimpan di perangkat ini, belum tersinkron: '+e.message)}
 kBusy=false}
 $('ksyncB').onclick=()=>kSync();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)kSync()});
 $('resend').onclick=async()=>{for(const s of siswa)if(!s.sent)await sendS(s);for(const r of nil)if(!r.sent)await sendN(r);say('Selesai kirim ulang.')};
-$('sendR').onclick=async()=>{if(!url){say('Isi URL Apps Script di menu Spreadsheet.');return}try{await post({type:'rekap',data:matrix()});say('Rekap terkirim ke tab Rekap.')}catch(e){say('Gagal kirim rekap: '+e.message)}};
+async function sendLap(){if(!url){say('Isi URL Apps Script di menu Spreadsheet.');return}
+try{for(const s of siswa)if(!s.sent)await sendS(s);for(const r of nil)if(!r.sent)await sendN(r);clearTimeout(lapT);
+const j=await post({type:'laporan'});say('Rekap dan nilai per mapel diperbarui di Google Sheets ('+j.siswa+' siswa, '+j.nilai+' nilai).')}
+catch(e){say(/tipe tidak dikenal/.test(e.message)?'Code.gs belum versi terbaru. Tempel Code.gs baru lalu Deploy > Kelola deployment > Versi baru.':'Gagal memperbarui rekap di Sheets: '+e.message)}}
+$('sendR').onclick=$('sendM').onclick=sendLap;$('nsyncB').onclick=()=>kSync();
 $('save').onclick=async()=>{const sid=$('sw').value;if(!sid){alert(siswa.length?'Pilih siswa dulu.':'Tambahkan siswa dulu di menu Data Siswa.');return}
 const ex=nil.findIndex(r=>r.sid===sid&&r.mapel===mapel);if(ex>=0&&!cur.edit&&!confirm('Siswa ini sudah punya nilai '+mapel+'. Timpa?'))return;
 if(cur.ans.includes('*')&&!confirm('Masih ada jawaban ganda (dihitung salah). Lanjut simpan?'))return;
-const rw={sid,mapel,...nilai(cur.ans),ans:cur.ans.slice(),sent:false};if(ex>=0)nil[ex]=rw;else nil.push(rw);persist();
+const rw={sid,mapel,...nilai(cur.ans),ans:cur.ans.slice(),sent:false,t:Date.now()};if(ex>=0)nil[ex]=rw;else nil.push(rw);persist();
 cur.edit=false;$('res').hidden=true;$('msg').textContent='Nilai '+rw.n+' masuk Daftar Nilai '+mapel+'. Scan lembar berikutnya.';fillSel();fillDl();sendN(rw)};
 async function run(cv){$('msg').textContent='Memproses…';$('res').hidden=true;
 if(!mapel){$('msg').textContent='Pilih mata pelajaran dulu.';return}if(key.length!==N){$('msg').textContent='Isi kunci jawaban 40 huruf dulu.';return}
@@ -329,7 +364,7 @@ const e=Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
 ans.push(e[0][1]>=2?e[0][0]:'*');flag.push(rs.some(r=>r.flag[q])||e.length>1||e[0][1]<2)}
 const terbaca=ans.filter(a=>a!=='-'&&a!=='*').length;
 if(terbaca<5){state='scan';stable=0;last=null;stt('Hanya '+terbaca+' jawaban terbaca. Periksa cahaya dan posisi, lalu coba lagi.');return}
-const ow=has(sid),rw={sid,mapel,...nilai(ans),ans:ans.slice(),sent:false},ex=nil.findIndex(r=>r.sid===sid&&r.mapel===mapel);
+const ow=has(sid),rw={sid,mapel,...nilai(ans),ans:ans.slice(),sent:false,t:Date.now()},ex=nil.findIndex(r=>r.sid===sid&&r.mapel===mapel);
 if(ex>=0)nil[ex]=rw;else nil.push(rw);persist();
 lastSid=sid;beep();showRes(rw,{ans,flag,wg:rs[0].wg},ow);sendN(rw);fillSel();
 let m='Tersimpan: '+nm(sid)+' = '+rw.n+'. ';
@@ -392,5 +427,7 @@ $('camE').onclick=()=>{if(!lastSid)return;const id=lastSid;close();sm=mapel;edit
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&stream)close()});
 fillCsw();
 kSync();
+setInterval(()=>{if(!document.hidden&&url&&$('camBox').hidden)kSync()},45000);
+window.addEventListener('online',()=>kSync());
 })();
 </script></body></html>
