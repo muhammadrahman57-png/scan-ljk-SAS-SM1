@@ -29,7 +29,7 @@ nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}[hidden]{display:none!
 <section class="tb" id="t-scan">
 <div class="c"><h2>1. Mata pelajaran &amp; kunci jawaban</h2>
 <div class="m" style="margin-bottom:6px">Pilih mata pelajaran. Kunci jawaban tersimpan terpisah untuk tiap mata pelajaran.</div><div class="r" id="mpb" style="margin:0 0 8px"></div><input type="hidden" id="mp">
-<textarea id="key" rows="2" placeholder="Ketik 40 huruf kunci, contoh: ABCDABCD..." style="margin-top:6px"></textarea><div class="m" id="kc"></div></div>
+<textarea id="key" rows="2" placeholder="Ketik 40 huruf kunci, contoh: ABCDABCD..." style="margin-top:6px"></textarea><div class="m" id="kc"></div><div class="r" style="margin-top:4px"><span class="m" id="ksync" style="flex:1"></span><button class="g" id="ksyncB" type="button">Sinkronkan kunci</button></div></div>
 <div class="c"><h2>2. Judul &amp; cetak lembar jawaban (LJK)</h2>
 <div class="m">Judul otomatis memuat mata pelajaran dari kolom di atas. Tulis {mapel} di judul jika ingin nama mapel ikut di judul.</div>
 <input type="text" id="tjd" placeholder="Judul LJK" style="margin-top:6px"><div class="r"><input type="text" id="tsk" placeholder="Nama sekolah" style="max-width:260px"><input type="text" id="tkl" placeholder="Kelas" style="max-width:80px"><input type="text" id="tsm" placeholder="Semester / Tahun ajaran" style="max-width:240px"></div>
@@ -157,7 +157,8 @@ r.ans.forEach((a,i)=>{const l=document.createElement('label');l.append(i+1);cons
 ['-','A','B','C','D','*'].forEach(v=>{const o=new Option(v==='*'?'ganda':v,v);s.add(o)});s.value=a;
 s.onchange=()=>{cur.ans[i]=s.value;cur.flag[i]=s.value==='*';show()};l.append(s);g.append(l)});show()}
 
-const sv_=(k,v)=>localStorage.setItem(k,JSON.stringify(v)),persist=()=>{sv_('lj_siswa',siswa);sv_('lj_nil',nil);sv_('lj_keys',keys);localStorage.setItem('lj_mapel',mapel)};
+let keysTs=ld('lj_kts',{}),kTimer={},kBusy=false;
+const sv_=(k,v)=>localStorage.setItem(k,JSON.stringify(v)),persist=()=>{sv_('lj_siswa',siswa);sv_('lj_nil',nil);sv_('lj_keys',keys);sv_('lj_kts',keysTs);localStorage.setItem('lj_mapel',mapel)};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),say=t=>$('st').textContent=t;
 const mps=()=>MAPEL,avg=a=>a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length*10)/10:'';
 let sub='mp',sm='',url=localStorage.getItem('lj_url')||'',tok=localStorage.getItem('lj_tok')||'';
@@ -165,7 +166,7 @@ function tab(t){document.querySelectorAll('.tb').forEach(e=>e.hidden=e.id!=='t-'
 if(t==='reset')fillRm();if(t==='nilai')rnil();if(t==='siswa')rsis();if(t==='scan'){fillSel();fillDl();redraw()}}
 function fillDl(){chips()}
 function fillSel(){$('sw').innerHTML='<option value="">— pilih siswa —</option>'+siswa.map(s=>`<option value="${s.id}">${nil.some(r=>r.sid===s.id&&r.mapel===mapel)?'✓ ':''}${esc(s.nama)} (${s.nisn})</option>`).join('')}
-const kc=()=>{key=$('key').value.toUpperCase().replace(/[^A-D]/g,'');$('kc').textContent=key.length+' / 40 huruf'+(key.length===N?' ✓':' (harus 40)');if(mapel){keys[mapel]=key;persist()}};
+const kc=()=>{key=$('key').value.toUpperCase().replace(/[^A-D]/g,'');$('kc').textContent=key.length+' / 40 huruf'+(key.length===N?' ✓':' (harus 40)');if(mapel){if((keys[mapel]||'')!==key){keys[mapel]=key;keysTs[mapel]=Date.now();kPush(mapel)}else keys[mapel]=key;persist()}};
 $('key').oninput=kc;
 function setMapel(m){mapel=m;$('mp').value=m;redraw();key=keys[mapel]||'';$('key').value=key;kc();localStorage.setItem('lj_mapel',mapel);fillSel();chips()}
 function chips(){$('mpb').innerHTML=mps().map(m=>`<button class="${m===mapel?'':'g'}" data-m="${esc(m)}" onclick="setMapel(this.dataset.m)">${esc(m)}</button>`).join('')}
@@ -191,7 +192,7 @@ if($('rs').checked&&url){try{await post(p);t+=' Data di Google Sheets juga dihap
 $('rN').onclick=()=>{const m=$('rm').value;if(!m){say('Belum ada mata pelajaran.');return}rst('Hapus SEMUA nilai '+m+'? Tidak bisa dibatalkan.',()=>{nil=nil.filter(r=>r.mapel!==m)},{type:'resetNilai',mapel:m})};
 $('rA').onclick=()=>rst('Hapus SEMUA nilai semua mapel? (data siswa tetap)',()=>{nil=[]},{type:'resetNilai'});
 $('rS').onclick=()=>rst('Hapus SEMUA data siswa beserta nilainya?',()=>{siswa=[];nil=[]},{type:'resetSiswa'});
-$('rK').onclick=()=>{const m=$('rm').value;if(!m||!confirm('Kosongkan kunci jawaban '+m+'?'))return;delete keys[m];if(m===mapel){key='';$('key').value='';kc()}persist();say('Kunci '+m+' dikosongkan.')};
+$('rK').onclick=()=>{const m=$('rm').value;if(!m||!confirm('Kosongkan kunci jawaban '+m+'?'))return;delete keys[m];keysTs[m]=Date.now();if(m===mapel){key='';$('key').value='';kc()}persist();kPush(m);say('Kunci '+m+' dikosongkan.')};
 $('rescan').onclick=()=>{$('res').hidden=true;$('msg').textContent='Hasil dibuang. Pilih foto baru.';$('file').click()};
 $('blank').onclick=()=>{const e=cur.edit;cur={ans:Array(N).fill('-'),flag:Array(N).fill(true),wg:cur.wg,edit:e};render(cur)};
 $('cancel').onclick=()=>{cur=null;$('res').hidden=true;$('msg').textContent='Dibatalkan.'};
@@ -212,10 +213,30 @@ else $('tr').innerHTML=matrix().map((r,i)=>'<tr>'+r.map(c=>i?`<td>${esc(c)}</td>
 async function cp(M){const t=M.map(r=>r.join('\t')).join('\n');try{await navigator.clipboard.writeText(t);say('Tersalin. Tempel di Google Sheets / Excel.')}catch(e){$('tsv').hidden=false;$('tsv').value=t;$('tsv').select();say('Salin manual dari kotak teks (Ctrl+C).')}}
 $('url').value=url;$('tok').value=tok;
 $('url').oninput=$('tok').oninput=()=>{url=$('url').value.trim();tok=$('tok').value.trim();localStorage.setItem('lj_url',url);localStorage.setItem('lj_tok',tok)};
+$('url').onchange=$('tok').onchange=()=>kSync();
 async function post(p){const res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:tok,...p})});const j=await res.json();if(!j.ok)throw Error(j.error||'ditolak');return j}
 async function sendS(s){if(!url)return;try{await post({type:'siswa',nisn:s.nisn,nama:s.nama});s.sent=true;persist();say('Siswa terkirim ke Sheets.')}catch(e){say('Siswa tersimpan, belum terkirim: '+e.message)}rsis()}
 async function sendN(r){const s=siswa.find(x=>x.id===r.sid);if(!url||!s)return;try{await post({type:'nilai',nisn:s.nisn,nama:s.nama,mapel:r.mapel,r:r.r,s:r.s,k:r.k,n:r.n,ans:r.ans});r.sent=true;persist();say('Nilai tersimpan dan terkirim ke Sheets.')}catch(e){say('Nilai tersimpan, BELUM terkirim ('+e.message+'). Gunakan "Kirim yang belum terkirim" di menu Spreadsheet.')}}
 $('ping').onclick=async()=>{try{await post({type:'ping'});say('Koneksi ke Apps Script berhasil.')}catch(e){say('Koneksi gagal: '+e.message)}};
+
+const ks=t=>{const e=$('ksync');if(e)e.textContent=t},cleanK=v=>String(v||'').toUpperCase().replace(/[^A-D]/g,'');
+function kPush(m){if(!url){ks('Kunci hanya tersimpan di perangkat ini. Hubungkan Google Sheets (menu Spreadsheet) agar tersinkron.');return}
+clearTimeout(kTimer[m]);ks('Menyinkronkan kunci…');kTimer[m]=setTimeout(async()=>{try{await post({type:'kunciSimpan',mapel:m,kunci:keys[m]||'',ts:keysTs[m]||Date.now()});ks('Kunci tersinkron ✓')}catch(e){ks('Kunci tersimpan di perangkat ini, belum tersinkron: '+e.message)}},800)}
+async function kSync(){if(!url){ks('Kunci hanya tersimpan di perangkat ini. Hubungkan Google Sheets (menu Spreadsheet) agar tersinkron.');return}
+if(kBusy)return;kBusy=true;ks('Menyinkronkan kunci…');
+try{const j=await post({type:'kunciAmbil'}),rem={};(j.data||[]).forEach(r=>{const m=canon(r.mapel);if(m)rem[m]={k:cleanK(r.kunci),t:+r.ts||0}});
+let ch=false;
+for(const m of MAPEL){const r=rem[m],lt=keysTs[m]||0,lk=keys[m]||'';
+if(r&&r.t>lt){if(lk!==r.k)ch=true;if(r.k)keys[m]=r.k;else delete keys[m];keysTs[m]=r.t}
+else if(r&&lt>r.t){await post({type:'kunciSimpan',mapel:m,kunci:lk,ts:lt})}
+else if(!r&&lk){if(!lt)keysTs[m]=Date.now();await post({type:'kunciSimpan',mapel:m,kunci:lk,ts:keysTs[m]})}}
+persist();
+if(ch){key=keys[mapel]||'';$('key').value=key;kc();chips()}
+ks('Kunci tersinkron ✓'+(ch?' (diperbarui dari perangkat lain)':''))}
+catch(e){ks('Kunci tersimpan di perangkat ini, belum tersinkron: '+e.message)}
+kBusy=false}
+$('ksyncB').onclick=()=>kSync();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)kSync()});
 $('resend').onclick=async()=>{for(const s of siswa)if(!s.sent)await sendS(s);for(const r of nil)if(!r.sent)await sendN(r);say('Selesai kirim ulang.')};
 $('sendR').onclick=async()=>{if(!url){say('Isi URL Apps Script di menu Spreadsheet.');return}try{await post({type:'rekap',data:matrix()});say('Rekap terkirim ke tab Rekap.')}catch(e){say('Gagal kirim rekap: '+e.message)}};
 $('save').onclick=async()=>{const sid=$('sw').value;if(!sid){alert(siswa.length?'Pilih siswa dulu.':'Tambahkan siswa dulu di menu Data Siswa.');return}
@@ -370,5 +391,6 @@ $('camT').onclick=async()=>{if(!stream)return;torchOn=!torchOn;try{await stream.
 $('camE').onclick=()=>{if(!lastSid)return;const id=lastSid;close();sm=mapel;editN(id)};
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&stream)close()});
 fillCsw();
+kSync();
 })();
 </script></body></html>
