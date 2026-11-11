@@ -9,7 +9,7 @@ main{max-width:860px;margin:0 auto;padding:14px}h1{font-size:20px;margin:6px 0 1
 button,.b{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;cursor:pointer;display:inline-block}
 button.g{background:transparent;color:var(--tx);border:1px solid var(--bd)}input,textarea,select{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:7px}
 textarea,input[type=text]{width:100%}.m{color:var(--mt);font-size:13px}.r{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
-#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px;margin:10px 0}#grid label{display:flex;gap:4px;align-items:center;border:1px solid var(--bd);border-radius:8px;padding:3px 5px;font-size:13px}#grid label.f{border-color:var(--wn);background:rgba(191,135,0,.18)}#grid select{padding:2px;flex:1}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:6px;margin:10px 0}#grid label{display:flex;gap:4px;align-items:center;border:1px solid var(--bd);border-radius:8px;padding:3px 5px;font-size:13px}#grid label.f{border-color:var(--wn);background:rgba(191,135,0,.18)}#grid select{padding:2px;flex:1;min-width:0}#grid label.w{border-color:var(--no);background:rgba(207,34,46,.14)}#grid label.f.w{border-color:var(--wn);box-shadow:inset 0 0 0 1px var(--no)}#grid .kk{font-size:11px;white-space:nowrap;color:var(--mt)}#grid label.w .kk{color:var(--no);font-weight:600}#grid.only label:not(.w):not(.f){display:none}
 canvas{max-width:100%;height:auto;border:1px solid var(--bd);border-radius:8px;background:#fff}.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}td,th{border-bottom:1px solid var(--bd);padding:5px 8px;text-align:left;white-space:nowrap}
 .ok{color:var(--ok)}.no{color:var(--no)}
 @page{size:210mm 297mm;margin:0}@media print{html,body{margin:0!important;padding:0!important;background:#fff!important}body *:not(#sheetBox):not(#sheetBox *):not(:has(#sheetBox)){display:none!important}#sheetBox{position:absolute!important;left:0;top:0;width:210mm!important;height:296.5mm!important;margin:0!important;padding:0!important;overflow:hidden}#sheetBox canvas{display:block;width:210mm!important;height:auto!important;max-width:none!important;border:0!important;border-radius:0!important}}
@@ -37,8 +37,10 @@ nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}[hidden]{display:none!
 <div class="r"><button onclick="print()">Cetak LJK</button></div><div id="sheetBox" style="margin-top:10px"><canvas id="sheet" width="1400" height="1980" style="max-width:300px"></canvas></div></div>
 <div class="c"><h2>3. Scan lembar jawaban</h2>
 <div class="m">Foto tegak lurus dari atas, cahaya merata, 4 kotak sudut terlihat penuh. Boleh miring/terbalik.</div>
-<div class="r"><button id="camOpen">Scan langsung (kamera)</button><label class="b">Upload foto<input id="file" type="file" accept="image/*" hidden></label><button class="g" id="test">Uji akurasi otomatis</button></div>
+<div class="r"><button id="camOpen">Scan langsung (kamera)</button><label class="b">Upload foto / PDF<input id="file" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png,application/pdf,.pdf" multiple hidden></label><button class="g" id="test">Uji akurasi otomatis</button></div>
+<div class="m" style="margin-top:6px">Upload boleh banyak file sekaligus: JPG/JPEG, PNG, atau PDF (satu halaman PDF = satu lembar LJK). PDF membutuhkan internet.</div>
 <div id="msg" class="m" style="margin-top:8px"></div>
+<div id="qbar" class="r" hidden><span class="m" id="qinfo"></span><button class="g" id="qskip" type="button">Lewati ke berikutnya</button><button class="g" id="qstop" type="button">Hentikan antrean</button></div>
 <div id="camBox" hidden>
 <div class="r" style="margin-top:0"><select id="camS" style="max-width:300px"></select><label class="m"><input type="checkbox" id="camA" checked> Lanjut otomatis ke siswa berikutnya</label></div>
 <div id="camRes" hidden><canvas id="crT" width="700" height="990"></canvas><div style="flex:1;min-width:150px"><div class="m" id="crN"></div><div class="big" id="crS"></div><div id="crD"></div><div class="r"><button class="g" id="camE">Periksa / edit jawaban</button></div></div></div>
@@ -48,7 +50,8 @@ nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}[hidden]{display:none!
 </div>
 <div id="res" hidden><canvas id="ov" width="700" height="990"></canvas>
 <div class="r"><select id="sw" style="max-width:300px"></select><b id="sc"></b></div>
-<div class="m">Kotak kuning = perlu dicek. Koreksi lewat pilihan jika tidak sesuai kertas. Setelah disimpan, nilai langsung masuk Daftar Nilai.</div>
+<div id="wl" class="m" style="margin:6px 0"></div><label class="m" style="display:block;margin-bottom:4px"><input type="checkbox" id="onlyW"> Tampilkan hanya nomor salah / ragu (untuk dicek manual)</label>
+<div class="m">Merah = jawaban salah, kosong, atau ganda (bandingkan dengan kertas; lingkaran biru putus-putus = kunci). Kotak kuning = ragu dibaca. Koreksi lewat pilihan jika tidak sesuai kertas. Setelah disimpan, nilai langsung masuk Daftar Nilai.</div>
 <div id="grid"></div><div class="r"><button id="save">Simpan ke Daftar Nilai</button><button class="g" id="rescan">Scan ulang</button><button class="g" id="blank">Kosongkan &amp; isi manual</button><button class="g" id="cancel">Batal</button></div></div></div>
 </section>
 <section class="tb" id="t-siswa" hidden>
@@ -87,6 +90,9 @@ const canon=m=>MAPEL.find(x=>x.toLowerCase()===String(m).trim().toLowerCase());
 nil.forEach(r=>{const c=canon(r.mapel);if(c)r.mapel=c});
 Object.keys(keys).forEach(k=>{const c=canon(k);if(c&&c!==k){if(keys[c]===undefined)keys[c]=keys[k];delete keys[k]}});
 mapel=canon(mapel)||MAPEL[0];key=keys[mapel]||'';
+function markWrong(c,q,k){const[bx,by]=bub(q,0);c.save();c.fillStyle='#cf222e';c.beginPath();c.arc(bx-42,by,5,0,7);c.fill();
+const o=L.indexOf(k);if(o>=0){const[x,y]=bub(q,o);c.strokeStyle='#1f6feb';c.lineWidth=2;c.setLineDash([4,3]);c.beginPath();c.arc(x,y,12,0,7);c.stroke()}c.restore()}
+const wrongNums=(a,k)=>{k=k||'';return k.length!==N?'':a.map((v,i)=>v!==k[i]?i+1:0).filter(Boolean).join(', ')};
 function drawSheet(c,marks,s){c.setTransform(s,0,0,s,0,0);c.fillStyle='#fff';c.fillRect(0,0,CW,CH);c.fillStyle='#000';
 for(const[x,y,z]of MK)c.fillRect(x-z/2,y-z/2,z,z);
 const ft=(t,px,wt)=>{let f=px;c.font=wt+' '+f+'px sans-serif';while(c.measureText(t).width>540&&f>9){f--;c.font=wt+' '+f+'px sans-serif'}};
@@ -163,14 +169,17 @@ function nilai(a){const K=parseKey();let r=0,k=0;a.forEach((v,i)=>{if(v==='-')k+
 return{r,k,s:N-r-k,n:Math.round(r/N*1000)/10}}
 let cur=null;
 function show(){const{ans,flag}=cur,c=$('ov').getContext('2d');if(cur.wg){const im=c.createImageData(CW,CH);for(let i=0;i<CW*CH;i++){const v=cur.wg[i];im.data[4*i]=im.data[4*i+1]=im.data[4*i+2]=v;im.data[4*i+3]=255}c.putImageData(im,0,0)}else drawSheet(c,null,1);c.setTransform(1,0,0,1,0,0);const K=parseKey();c.lineWidth=3;
-for(let q=0;q<N;q++){if(flag[q]){c.strokeStyle='#d29922';c.strokeRect(bub(q,0)[0]-18,bub(q,0)[1]-16,102,32)}
+for(let q=0;q<N;q++){if(K[q]&&ans[q]!==K[q])markWrong(c,q,K[q]);if(flag[q]){c.strokeStyle='#d29922';c.strokeRect(bub(q,0)[0]-18,bub(q,0)[1]-16,102,32)}
 const o=L.indexOf(ans[q]);if(o>=0){const[x,y]=bub(q,o);c.strokeStyle=ans[q]===K[q]?'#1a7f37':'#cf222e';c.beginPath();c.arc(x,y,9,0,7);c.stroke()}}
 const n=nilai(ans);$('sc').innerHTML='Benar '+n.r+' · Salah '+n.s+' · Kosong '+n.k+' · Nilai <span class="'+(n.n>=70?'ok':'no')+'">'+n.n+'</span>';
-document.querySelectorAll('#grid label').forEach((l,i)=>l.className=flag[i]?'f':'')}
+const wn=[];ans.forEach((a,i)=>{if(K[i]&&a!==K[i])wn.push((i+1)+(a==='-'?' (kosong)':a==='*'?' (ganda)':''))});const nf=flag.filter(Boolean).length;
+$('wl').innerHTML=(K.length?(wn.length?'<b class="no">Cek manual: '+wn.length+' nomor salah/kosong/ganda</b><br>'+wn.join(', '):'<b class="ok">Semua jawaban sesuai kunci.</b>'):'<span class="no">Kunci jawaban belum lengkap.</span>')+(nf?'<br><span style="color:var(--wn)">'+nf+' nomor ragu dibaca (kotak kuning).</span>':'');
+document.querySelectorAll('#grid label').forEach((l,i)=>{l.className=(flag[i]?'f ':'')+(K[i]&&ans[i]!==K[i]?'w':'');const kk=l.querySelector('.kk');if(kk)kk.textContent='kunci '+(K[i]||'-')})}
+$('onlyW').onchange=e=>$('grid').classList.toggle('only',e.target.checked);
 function render(r){cur=r;$('res').hidden=false;const g=$('grid');g.innerHTML='';
 r.ans.forEach((a,i)=>{const l=document.createElement('label');l.append(i+1);const s=document.createElement('select');
 ['-','A','B','C','D','*'].forEach(v=>{const o=new Option(v==='*'?'ganda':v,v);s.add(o)});s.value=a;
-s.onchange=()=>{cur.ans[i]=s.value;cur.flag[i]=s.value==='*';show()};l.append(s);g.append(l)});show()}
+s.onchange=()=>{cur.ans[i]=s.value;cur.flag[i]=s.value==='*';show()};l.append(s);const kk=document.createElement('span');kk.className='kk';l.append(kk);g.append(l)});show()}
 
 let keysTs=ld('lj_kts',{}),kTimer={},kBusy=false;
 const sv_=(k,v)=>localStorage.setItem(k,JSON.stringify(v)),persist=()=>{sv_('lj_siswa',siswa);sv_('lj_nil',nil);sv_('lj_keys',keys);sv_('lj_kts',keysTs);localStorage.setItem('lj_mapel',mapel)};
@@ -210,7 +219,7 @@ $('rS').onclick=()=>rst('Hapus SEMUA data siswa beserta nilainya?',()=>{siswa=[]
 $('rK').onclick=()=>{const m=$('rm').value;if(!m||!confirm('Kosongkan kunci jawaban '+m+'?'))return;delete keys[m];keysTs[m]=Date.now();if(m===mapel){key='';$('key').value='';kc()}persist();kPush(m);say('Kunci '+m+' dikosongkan.')};
 $('rescan').onclick=()=>{$('res').hidden=true;$('msg').textContent='Hasil dibuang. Pilih foto baru.';$('file').click()};
 $('blank').onclick=()=>{const e=cur.edit;cur={ans:Array(N).fill('-'),flag:Array(N).fill(true),wg:cur.wg,edit:e};render(cur)};
-$('cancel').onclick=()=>{cur=null;$('res').hidden=true;$('msg').textContent='Dibatalkan.'};
+$('cancel').onclick=()=>{cur=null;$('res').hidden=true;$('msg').textContent='Dibatalkan.';if(Q.length)nextQ()};
 function mpM(){const rs=nil.filter(r=>r.mapel===sm),h=['No','Nama','NISN','Benar','Salah','Kosong','Nilai',...Array.from({length:N},(_,i)=>'S'+(i+1))];
 return[h,...siswa.map((s,i)=>{const r=rs.find(x=>x.sid===s.id);return r?[i+1,s.nama,s.nisn,r.r,r.s,r.k,r.n,...r.ans]:[i+1,s.nama,s.nisn]})]}
 function matrix(){const m=mps(),f=(s,x)=>{const r=nil.find(r=>r.sid===s.id&&r.mapel===x);return r?r.n:''};
@@ -221,8 +230,8 @@ function rnil(){const m=mps();if(!sm||!m.includes(sm))sm=m.includes(mapel)?mapel
 $('smb').innerHTML=m.map(x=>`<button class="${x===sm?'':'g'}" data-m="${esc(x)}" onclick="sm=this.dataset.m;rnil()">${esc(x)} (${nil.filter(r=>r.mapel===x).length}/${siswa.length})</button>`).join('');
 $('v-mp').hidden=sub!=='mp';$('v-rk').hidden=sub!=='rk';$('s-mp').className=sub==='mp'?'':'g';$('s-rk').className=sub==='rk'?'':'g';
 if(sub==='mp'){const rs=nil.filter(r=>r.mapel===sm),v=rs.map(r=>r.n);
-$('tn').innerHTML='<tr><th>No</th><th>Nama</th><th>NISN</th><th>Benar</th><th>Salah</th><th>Kosong</th><th>Nilai</th><th>Sheet</th><th></th></tr>'+siswa.map((s,i)=>{const r=rs.find(x=>x.sid===s.id);
-return`<tr><td>${i+1}</td><td>${esc(s.nama)}</td><td>${s.nisn}</td>`+(r?`<td>${r.r}</td><td>${r.s}</td><td>${r.k}</td><td><b>${r.n}</b></td><td>${r.sent?'✓':'–'}</td><td><button class="g" onclick="editN('${r.sid}')">Edit</button> <button class="g" onclick="delN('${r.sid}')">Hapus</button></td>`:'<td colspan="6" class="m">belum dinilai</td>')+'</tr>'}).join('');
+$('tn').innerHTML='<tr><th>No</th><th>Nama</th><th>NISN</th><th>Benar</th><th>Salah</th><th>Kosong</th><th>Nilai</th><th>No. salah</th><th>Sheet</th><th></th></tr>'+siswa.map((s,i)=>{const r=rs.find(x=>x.sid===s.id);
+return`<tr><td>${i+1}</td><td>${esc(s.nama)}</td><td>${s.nisn}</td>`+(r?`<td>${r.r}</td><td>${r.s}</td><td>${r.k}</td><td><b>${r.n}</b></td><td style="white-space:normal;min-width:130px">${wrongNums(r.ans,keys[sm])||'–'}</td><td>${r.sent?'✓':'–'}</td><td><button class="g" onclick="editN('${r.sid}')">Edit</button> <button class="g" onclick="delN('${r.sid}')">Hapus</button></td>`:'<td colspan="7" class="m">belum dinilai</td>')+'</tr>'}).join('');
 $('ss').textContent=sm?`Dinilai ${rs.length}/${siswa.length} · Rata-rata ${avg(v)} · Tertinggi ${v.length?Math.max(...v):'-'} · Terendah ${v.length?Math.min(...v):'-'}`:'Belum ada nilai. Scan LJK dulu.'}
 else $('tr').innerHTML=matrix().map((r,i)=>'<tr>'+r.map(c=>i?`<td>${esc(c)}</td>`:`<th>${esc(c)}</th>`).join('')+'</tr>').join('')}
 async function cp(M){const t=M.map(r=>r.join('\t')).join('\n');try{await navigator.clipboard.writeText(t);say('Tersalin. Tempel di Google Sheets / Excel.')}catch(e){$('tsv').hidden=false;$('tsv').value=t;$('tsv').select();say('Salin manual dari kotak teks (Ctrl+C).')}}
@@ -292,12 +301,32 @@ $('save').onclick=async()=>{const sid=$('sw').value;if(!sid){alert(siswa.length?
 const ex=nil.findIndex(r=>r.sid===sid&&r.mapel===mapel);if(ex>=0&&!cur.edit&&!confirm('Siswa ini sudah punya nilai '+mapel+'. Timpa?'))return;
 if(cur.ans.includes('*')&&!confirm('Masih ada jawaban ganda (dihitung salah). Lanjut simpan?'))return;
 const rw={sid,mapel,...nilai(cur.ans),ans:cur.ans.slice(),sent:false,t:Date.now()};if(ex>=0)nil[ex]=rw;else nil.push(rw);persist();
-cur.edit=false;$('res').hidden=true;$('msg').textContent='Nilai '+rw.n+' masuk Daftar Nilai '+mapel+'. Scan lembar berikutnya.';fillSel();fillDl();sendN(rw)};
-async function run(cv){$('msg').textContent='Memproses…';$('res').hidden=true;
+cur.edit=false;$('res').hidden=true;$('msg').textContent='Nilai '+rw.n+' masuk Daftar Nilai '+mapel+'. Scan lembar berikutnya.';fillSel();fillDl();sendN(rw);if(Q.length)setTimeout(nextQ,60)};
+async function run(cv,auto){$('msg').textContent='Memproses…';$('res').hidden=true;
 if(!mapel){$('msg').textContent='Pilih mata pelajaran dulu.';return}if(key.length!==N){$('msg').textContent='Isi kunci jawaban 40 huruf dulu.';return}
-try{await new Promise(r=>setTimeout(r,30));const r=scan(cv);const nf=r.flag.filter(Boolean).length;
-$('msg').textContent=nf?'Selesai. '+nf+' nomor perlu dicek (kotak kuning).':'Selesai. Semua nomor terbaca jelas (1 jawaban per nomor).';render(r)}catch(e){$('msg').textContent='Gagal: '+e.message}}
-$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image();im.onload=()=>{run(im);URL.revokeObjectURL(im.src)};im.src=URL.createObjectURL(f);e.target.value=''};
+try{await new Promise(r=>setTimeout(r,30));const r=scan(cv);const nf=r.flag.filter(Boolean).length,pre=qTot>1?'Lembar '+qNo+' dari '+qTot+'. ':'';
+$('msg').textContent=pre+(nf?'Selesai. '+nf+' nomor perlu dicek (kotak kuning).':'Selesai. Semua nomor terbaca jelas (1 jawaban per nomor).')+(auto?' Siswa dipilih otomatis (berikutnya yang belum dinilai); ganti jika tidak sesuai.':'');
+fillSel();render(r);
+if(auto){const n=siswa.find(s=>!nil.some(x=>x.sid===s.id&&x.mapel===mapel));if(n)$('sw').value=n.id}}catch(e){$('msg').textContent=(qTot>1?'Lembar '+qNo+' dari '+qTot+' gagal: ':'Gagal: ')+e.message+(Q.length?' Tekan "Lewati ke berikutnya" untuk lanjut.':'')}}
+let Q=[],qTot=0,qNo=0;
+const isPdf=f=>f.type==='application/pdf'||/\.pdf$/i.test(f.name),PDFV='3.11.174';
+function loadPdfJs(){if(window.pdfjsLib)return Promise.resolve();return new Promise((ok,no)=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+PDFV+'/pdf.min.js';
+sc.onload=()=>{pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+PDFV+'/pdf.worker.min.js';ok()};sc.onerror=()=>no(Error('Pembaca PDF gagal dimuat. Periksa koneksi internet, atau ubah PDF menjadi foto JPG.'));document.head.append(sc)})}
+async function pdfPage(doc,n){const pg=await doc.getPage(n),v1=pg.getViewport({scale:1}),vp=pg.getViewport({scale:Math.min(4,2000/Math.max(v1.width,v1.height))}),c=document.createElement('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);
+const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);await pg.render({canvasContext:x,viewport:vp,background:'#ffffff'}).promise;return c}
+function imgFile(f){return new Promise((ok,no)=>{const im=new Image(),u=URL.createObjectURL(f);im.onload=()=>{URL.revokeObjectURL(u);ok(im)};im.onerror=()=>{URL.revokeObjectURL(u);no(Error(f.name+' tidak bisa dibaca sebagai gambar. Gunakan JPG/JPEG, PNG, atau PDF.'))};im.src=u})}
+function qUi(){$('qbar').hidden=!Q.length;$('qinfo').textContent='Antrean: sisa '+Q.length+' lembar'}
+async function nextQ(){const it=Q.shift();qUi();if(!it)return;qNo++;$('res').hidden=true;$('msg').textContent='Memproses '+it.label+(qTot>1?' ('+qNo+'/'+qTot+')':'')+'…';
+let src;try{src=await it.get()}catch(e){$('msg').textContent='Gagal membuka '+it.label+': '+e.message+(Q.length?' Tekan "Lewati ke berikutnya" untuk lanjut.':'');return}
+await run(src,qTot>1)}
+$('file').onchange=async e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;
+if(!mapel){$('msg').textContent='Pilih mata pelajaran dulu.';return}if(key.length!==N){$('msg').textContent='Isi kunci jawaban 40 huruf dulu.';return}
+$('msg').textContent='Membaca file…';Q=[];
+try{for(const f of fs){if(isPdf(f)){await loadPdfJs();const doc=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;for(let p=1;p<=doc.numPages;p++)Q.push({label:f.name+' hal. '+p,get:()=>pdfPage(doc,p)})}
+else Q.push({label:f.name,get:()=>imgFile(f)})}}
+catch(err){Q=[];qUi();$('msg').textContent='Gagal membuka file: '+err.message;return}
+qTot=Q.length;qNo=0;nextQ()};
+$('qskip').onclick=()=>nextQ();$('qstop').onclick=()=>{Q=[];qUi();$('res').hidden=true;$('msg').textContent='Antrean dihentikan.'};
 $('test').onclick=async()=>{$('msg').textContent='Menguji…';await new Promise(r=>setTimeout(r,30));let ok=0,tot=0,err=[];
 const sv=key;key='A'.repeat(N);
 for(let t=0;t<4;t++){const m=Array.from({length:N},(_,i)=>Math.random()<.05?-1:Math.floor(Math.random()*4));
@@ -390,11 +419,11 @@ const nf=r.flag.filter(Boolean).length;
 $('camRes').hidden=false;
 $('crN').textContent=nm(rw.sid)+' · '+mapel;
 $('crS').innerHTML='<span class="m" style="font-size:13px;font-weight:400">Nilai (skala 0–100)</span><br><span class="'+(rw.n>=70?'ok':'no')+'">'+rw.n+'</span>';
-$('crD').innerHTML='Benar <b>'+rw.r+'</b> dari '+N+' · Salah '+rw.s+' · Kosong '+rw.k+'<br><span class="m">Tersimpan ke Daftar Nilai '+esc(mapel)+(ow?' (menimpa nilai lama)':'')+(nf?' · '+nf+' nomor ragu, periksa jika perlu':'')+'</span>';
+$('crD').innerHTML='Benar <b>'+rw.r+'</b> dari '+N+' · Salah '+rw.s+' · Kosong '+rw.k+'<br><b class="no">'+(wrongNums(rw.ans,key)?'Salah: no. '+wrongNums(rw.ans,key):'')+'</b><br><span class="m">Tersimpan ke Daftar Nilai '+esc(mapel)+(ow?' (menimpa nilai lama)':'')+(nf?' · '+nf+' nomor ragu, periksa jika perlu':'')+'</span>';
 const c=$('crT').getContext('2d'),im=c.createImageData(CW,CH);
 for(let i=0;i<CW*CH;i++){const v=r.wg[i];im.data[4*i]=im.data[4*i+1]=im.data[4*i+2]=v;im.data[4*i+3]=255}
 c.putImageData(im,0,0);const K=parseKey();c.lineWidth=3;
-for(let q=0;q<N;q++){if(r.flag[q]){c.strokeStyle='#d29922';c.strokeRect(bub(q,0)[0]-18,bub(q,0)[1]-16,102,32)}
+for(let q=0;q<N;q++){if(K[q]&&r.ans[q]!==K[q])markWrong(c,q,K[q]);if(r.flag[q]){c.strokeStyle='#d29922';c.strokeRect(bub(q,0)[0]-18,bub(q,0)[1]-16,102,32)}
 const o=L.indexOf(r.ans[q]);if(o>=0){const[x,y]=bub(q,o);c.strokeStyle=r.ans[q]===K[q]?'#1a7f37':'#cf222e';c.beginPath();c.arc(x,y,9,0,7);c.stroke()}}}
 
 function beep(){try{aud=aud||new(window.AudioContext||window.webkitAudioContext)();const o=aud.createOscillator(),g=aud.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(aud.destination);o.start();o.stop(aud.currentTime+.12)}catch(e){}try{navigator.vibrate&&navigator.vibrate(80)}catch(e){}}
