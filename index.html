@@ -12,7 +12,7 @@ textarea,input[type=text]{width:100%}.m{color:var(--mt);font-size:13px}.r{displa
 #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px;margin:10px 0}#grid label{display:flex;gap:4px;align-items:center;border:1px solid var(--bd);border-radius:8px;padding:3px 5px;font-size:13px}#grid label.f{border-color:var(--wn);background:rgba(191,135,0,.18)}#grid select{padding:2px;flex:1}
 canvas{max-width:100%;height:auto;border:1px solid var(--bd);border-radius:8px;background:#fff}.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}td,th{border-bottom:1px solid var(--bd);padding:5px 8px;text-align:left;white-space:nowrap}
 .ok{color:var(--ok)}.no{color:var(--no)}
-@media print{body *{visibility:hidden}#sheetBox,#sheetBox *{visibility:visible}#sheetBox{position:absolute;left:0;top:0;width:100%}#sheetBox canvas{width:100%;border:0}}
+@page{size:210mm 297mm;margin:0}@media print{html,body{margin:0!important;padding:0!important;background:#fff!important}body *:not(#sheetBox):not(#sheetBox *):not(:has(#sheetBox)){display:none!important}#sheetBox{position:absolute!important;left:0;top:0;width:210mm!important;height:296.5mm!important;margin:0!important;padding:0!important;overflow:hidden}#sheetBox canvas{display:block;width:210mm!important;height:auto!important;max-width:none!important;border:0!important;border-radius:0!important}}
 nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}[hidden]{display:none!important}input[list],#sn,#sd{margin:2px 0}.sub{margin:6px 0}
 #mpb button,#smb button{padding:7px 11px;font-size:14px}
 #camBox{margin-top:10px;border:1px solid var(--bd);border-radius:12px;padding:10px}
