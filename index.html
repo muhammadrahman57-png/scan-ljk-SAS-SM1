@@ -76,7 +76,7 @@ nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}[hidden]{display:none!
 </main>
 <script>
 
-const N=40,CW=700,CH=990,L='ABCD';
+const N=40,CW=700,CH=990,L='ABCD',BR=5.7;let FILLC='#222',JIT=0;
 const MK=[[40,40,44],[660,40,30],[660,950,30],[40,950,30]];
 const bub=(q,o)=>[60+Math.floor(q/10)*150+40+o*30,200+(q%10)*52];
 const $=i=>document.getElementById(i);
@@ -99,8 +99,8 @@ c.font='15px sans-serif';c.textAlign='left';c.fillText('Nama      : ............
 c.textAlign='center';c.font='bold 14px sans-serif';
 for(let k=0;k<4;k++)for(let o=0;o<4;o++)c.fillText(L[o],bub(k*10,o)[0],176);
 for(let q=0;q<N;q++){const x0=60+Math.floor(q/10)*150;c.textAlign='right';c.font='14px sans-serif';c.fillText(q+1,x0+22,bub(q,0)[1]+5);
-for(let o=0;o<4;o++){const[x,y]=bub(q,o);c.beginPath();c.arc(x,y,5.7,0,7);c.lineWidth=2;c.strokeStyle='#000';c.stroke();
-if(marks&&marks[q]===o){c.beginPath();c.arc(x,y,4.6,0,7);c.fillStyle='#222';c.fill();c.fillStyle='#000'}}}
+for(let o=0;o<4;o++){const[x,y]=bub(q,o);c.beginPath();c.arc(x,y,BR,0,7);c.lineWidth=2;c.strokeStyle='#000';c.stroke();
+if(marks&&marks[q]===o){c.beginPath();c.arc(x+(Math.random()-.5)*JIT,y+(Math.random()-.5)*JIT,BR-1.1,0,7);c.fillStyle=FILLC;c.fill();c.fillStyle='#000'}}}
 c.textAlign='center';c.font='13px sans-serif';c.fillText('Hitamkan satu bulatan saja per nomor. Jangan melipat/merobek kotak hitam di sudut.',350,760)}
 drawSheet($('sheet').getContext('2d'),null,2);
 function thr(g,w,h,win,k){const W=w+1,I=new Float64Array(W*(h+1));
@@ -124,7 +124,7 @@ for(let c=0;c<8;c++){let p=c;for(let r=c+1;r<8;r++)if(Math.abs(A[r][c])>Math.abs
 if(Math.abs(A[c][c])<1e-9)throw Error('Penanda sudut tidak valid');
 for(let r=0;r<8;r++)if(r!==c){const f=A[r][c]/A[c][c];for(let k=c;k<9;k++)A[r][k]-=f*A[c][k]}}
 return A.map((r,i)=>r[8]/r[i])}
-function scan(src){let s=Math.min(1,1200/Math.max(src.width,src.height));const w=Math.round(src.width*s),h=Math.round(src.height*s);
+function scan(src){let s=Math.min(1,1800/Math.max(src.width,src.height));const w=Math.round(src.width*s),h=Math.round(src.height*s);
 const cv=document.createElement('canvas');cv.width=w;cv.height=h;const cx=cv.getContext('2d',{willReadFrequently:true});cx.drawImage(src,0,0,w,h);
 const d=cx.getImageData(0,0,w,h).data,g=new Float32Array(w*h);for(let i=0;i<w*h;i++)g[i]=.299*d[4*i]+.587*d[4*i+1]+.114*d[4*i+2];
 const b=thr(g,w,h,Math.max(41,(Math.max(w,h)/8)|1),.7),C=blobs(b,w,h,.16*Math.max(w,h));
@@ -135,14 +135,28 @@ const cx0=E.reduce((a,c)=>a+c.x,0)/4,cy0=E.reduce((a,c)=>a+c.y,0)/4;
 E.sort((p,q)=>Math.atan2(p.y-cy0,p.x-cx0)-Math.atan2(q.y-cy0,q.x-cx0));
 let bi=0;E.forEach((e,i)=>{if(e.a>E[bi].a)bi=i});const o=[0,1,2,3].map(i=>E[(bi+i)%4]);
 const rest=o.slice(1).map(e=>e.a).sort((a,b)=>a-b)[1];if(o[0].a/rest<1.3)throw Error('Kotak sudut atas-kiri tidak terbaca jelas. Foto ulang.');
-const H=homog(o.map(e=>[e.x,e.y])),wg=new Float32Array(CW*CH).fill(255);
-for(let y=0;y<CH;y++)for(let x=0;x<CW;x++){const z=H[6]*x+H[7]*y+1,u=Math.round((H[0]*x+H[1]*y+H[2])/z),v=Math.round((H[3]*x+H[4]*y+H[5])/z);
-if(u>=0&&v>=0&&u<w&&v<h)wg[y*CW+x]=g[v*w+u]}
-const wb=thr(wg,CW,CH,121,.78),ans=[],flag=[],fills=[];
-for(let q=0;q<N;q++){const f=[];for(let k=0;k<4;k++){const[x,y]=bub(q,k);let t=0,n=0;
-for(let j=-4;j<=4;j++)for(let i=-4;i<=4;i++)if(i*i+j*j<=12){n++;t+=wb[(y+j)*CW+x+i]}f.push(t/n)}
-fills.push(f);const mk=f.filter(v=>v>.45).length,bd=f.some(v=>v>.2&&v<=.45);
-const top=f.indexOf(Math.max(...f));ans.push(mk===1?L[top]:mk===0?'-':'*');flag.push(mk!==1||bd)}
+const H=homog(o.map(e=>[e.x,e.y])),HS=2,HW=CW*HS,HH=CH*HS,hg=new Float32Array(HW*HH),wg=new Float32Array(CW*CH);
+const sp=(u,v)=>{if(u<0||v<0||u>w-1||v>h-1)return 255;const x0=u|0,y0=v|0,fx=u-x0,fy=v-y0,i=y0*w+x0,ox=x0<w-1?1:0,oy=y0<h-1?w:0;
+return(g[i]*(1-fx)+g[i+ox]*fx)*(1-fy)+(g[i+oy]*(1-fx)+g[i+oy+ox]*fx)*fy};
+for(let y=0;y<HH;y++)for(let x=0;x<HW;x++){const X=x/HS,Y=y/HS,z=H[6]*X+H[7]*Y+1;hg[y*HW+x]=sp((H[0]*X+H[1]*Y+H[2])/z,(H[3]*X+H[4]*Y+H[5])/z)}
+for(let y=0;y<CH;y++)for(let x=0;x<CW;x++)wg[y*CW+x]=hg[y*HS*HW+x*HS];
+// Pembacaan: gelap-tidaknya isi tiap lingkaran dibanding kertas di sekitarnya (tidak bergantung pada ambang tetap)
+const mkO=(r0,r1,st)=>{const a=[],R=Math.ceil(r1*HS);for(let j=-R;j<=R;j+=st)for(let i=-R;i<=R;i+=st){const d=Math.hypot(i,j)/HS;if(d>=r0&&d<=r1)a.push(i,j)}return a};
+const ringO=mkO(BR-1,BR+.9,1),outO=mkO(BR+2.6,BR+4.6,2),inO=mkO(0,BR*.68,1);
+const mean=(cx,cy,O)=>{let t=0;for(let k=0;k<O.length;k+=2)t+=hg[(cy+O[k+1])*HW+cx+O[k]];return t/(O.length/2)};
+const D=[];
+for(let q=0;q<N;q++){const B=[0,1,2,3].map(k=>{const[x,y]=bub(q,k);return[Math.round(x*HS),Math.round(y*HS)]});
+// geser posisi baris (±5 px) agar tepat di atas cincin lingkaran: mengoreksi distorsi lensa / kertas melengkung
+const sc=(dx,dy)=>{let t=0;for(const[x,y]of B)t+=mean(x+dx,y+dy,outO)-mean(x+dx,y+dy,ringO);return t-.4*Math.hypot(dx,dy)/HS*B.length};
+let bs=-1e9,bx=0,by=0;for(let dy=-10;dy<=10;dy+=2)for(let dx=-10;dx<=10;dx+=2){const v=sc(dx,dy);if(v>bs){bs=v;bx=dx;by=dy}}
+const cx0=bx,cy0=by;for(let dy=cy0-1;dy<=cy0+1;dy++)for(let dx=cx0-1;dx<=cx0+1;dx++){const v=sc(dx,dy);if(v>bs){bs=v;bx=dx;by=dy}}
+D.push(B.map(([x,y])=>{const P=mean(x+bx,y+by,outO),M=mean(x+bx,y+by,inO);return Math.max(0,(P-M)/Math.max(P,1))}))}
+const all=D.flat().sort((p,q)=>p-q),med=a=>a[a.length>>1],base=med(all),mad=med(all.map(v=>Math.abs(v-base)).sort((p,q)=>p-q)),
+T=base+Math.max(.1,4*1.4826*mad),ans=[],flag=[],fills=D;
+for(let q=0;q<N;q++){const ix=[0,1,2,3].sort((p,r)=>D[q][r]-D[q][p]),d1=D[q][ix[0]],d2=D[q][ix[1]];let a='-',fl=false;
+if(d1>=T){if(d2>=T){if(d2>=.6*d1)a='*';else a=L[ix[0]];fl=true}else a=L[ix[0]]}
+else if(d1>=base+.07&&d1>=1.8*Math.max(d2,.02)){a=L[ix[0]];fl=true}
+ans.push(a);flag.push(fl)}
 return{ans,flag,fills,wg}}
 function parseKey(){return key.split('')}
 function nilai(a){const K=parseKey();let r=0,k=0;a.forEach((v,i)=>{if(v==='-')k++;else if(v===K[i])r++});
@@ -287,7 +301,7 @@ $('file').onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image
 $('test').onclick=async()=>{$('msg').textContent='Menguji…';await new Promise(r=>setTimeout(r,30));let ok=0,tot=0,err=[];
 const sv=key;key='A'.repeat(N);
 for(let t=0;t<4;t++){const m=Array.from({length:N},(_,i)=>Math.random()<.05?-1:Math.floor(Math.random()*4));
-const sc=document.createElement('canvas');sc.width=CW;sc.height=CH;drawSheet(sc.getContext('2d'),m,1);
+FILLC=['#222','#9a9a9a','#222','#b0b0b0'][t];JIT=[0,2,4,4][t];const sc=document.createElement('canvas');sc.width=CW;sc.height=CH;drawSheet(sc.getContext('2d'),m,1);FILLC='#222';JIT=0;
 const bg=document.createElement('canvas');bg.width=1100;bg.height=1400;const c=bg.getContext('2d');c.fillStyle='#8a8a8a';c.fillRect(0,0,1100,1400);
 c.translate(550+(Math.random()-.5)*60,700);c.rotate([.07,-.25,Math.PI+.05,Math.PI/2-.04][t]);const z=[1.25,1.1,1.25,1][t];c.scale(z,z);c.drawImage(sc,-350,-495);c.setTransform(1,0,0,1,0,0);
 const gr=c.createLinearGradient(0,0,1100,0);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.35)');c.fillStyle=gr;c.fillRect(0,0,1100,1400);
