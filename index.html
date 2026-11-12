@@ -34,9 +34,10 @@ nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}[hidden]{display:none!
 <div class="m">Judul otomatis memuat mata pelajaran dari kolom di atas. Tulis {mapel} di judul jika ingin nama mapel ikut di judul.</div>
 <input type="text" id="tjd" placeholder="Judul LJK" style="margin-top:6px"><div class="r"><input type="text" id="tsk" placeholder="Nama sekolah" style="max-width:260px"><input type="text" id="tkl" placeholder="Kelas" style="max-width:80px"><input type="text" id="tsm" placeholder="Semester / Tahun ajaran" style="max-width:240px"></div>
 <div class="m">Cetak di A4 skala 100%, jangan memotong 4 kotak hitam di sudut. Siswa menghitamkan satu bulatan per nomor.</div>
-<div class="r"><button onclick="print()">Cetak LJK</button></div><div id="sheetBox" style="margin-top:10px"><canvas id="sheet" width="1400" height="1980" style="max-width:300px"></canvas></div></div>
+<div class="m" style="margin-bottom:6px">LJK memuat kolom <b>Nomor Absen</b> (2 digit). Siswa menghitamkan nomor absennya sesuai kolom Absen di menu Data Siswa, sehingga scanner mengenali siswa otomatis.</div><div class="r"><button onclick="print()">Cetak LJK</button></div><div id="sheetBox" style="margin-top:10px"><canvas id="sheet" width="1400" height="1980" style="max-width:300px"></canvas></div></div>
 <div class="c"><h2>3. Scan lembar jawaban</h2>
 <div class="m">Foto tegak lurus dari atas, cahaya merata, 4 kotak sudut terlihat penuh. Boleh miring/terbalik.</div>
+<label class="m" style="display:block;margin-bottom:6px"><input type="checkbox" id="absOn" checked> Kenali siswa otomatis dari nomor absen di LJK</label>
 <div class="r"><button id="camOpen">Scan langsung (kamera)</button><label class="b">Upload foto / PDF<input id="file" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png,application/pdf,.pdf" multiple hidden></label><button class="g" id="test">Uji akurasi otomatis</button></div>
 <div class="m" style="margin-top:6px">Upload boleh banyak file sekaligus: JPG/JPEG, PNG, atau PDF (satu halaman PDF = satu lembar LJK). PDF membutuhkan internet.</div>
 <div id="msg" class="m" style="margin-top:8px"></div>
@@ -49,14 +50,14 @@ nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}[hidden]{display:none!
 <div class="r"><button id="camG">Ambil sekarang</button><button class="g" id="camF">Ganti kamera</button><button class="g" id="camT" hidden>Lampu</button><button class="g" id="camX">Tutup kamera</button></div>
 </div>
 <div id="res" hidden><canvas id="ov" width="700" height="990"></canvas>
-<div class="r"><select id="sw" style="max-width:300px"></select><b id="sc"></b></div>
+<div class="r"><select id="sw" style="max-width:300px"></select><b id="sc"></b></div><div id="ab" class="m" style="margin:4px 0"></div>
 <div id="wl" class="m" style="margin:6px 0"></div><label class="m" style="display:block;margin-bottom:4px"><input type="checkbox" id="onlyW"> Tampilkan hanya nomor salah / ragu (untuk dicek manual)</label>
 <div class="m">Merah = jawaban salah, kosong, atau ganda (bandingkan dengan kertas; lingkaran biru putus-putus = kunci). Kotak kuning = ragu dibaca. Koreksi lewat pilihan jika tidak sesuai kertas. Setelah disimpan, nilai langsung masuk Daftar Nilai.</div>
 <div id="grid"></div><div class="r"><button id="save">Simpan ke Daftar Nilai</button><button class="g" id="rescan">Scan ulang</button><button class="g" id="blank">Kosongkan &amp; isi manual</button><button class="g" id="cancel">Batal</button></div></div></div>
 </section>
 <section class="tb" id="t-siswa" hidden>
-<div class="c"><h2>Tambah siswa</h2><div class="r"><input type="text" id="sn" placeholder="Nama siswa" style="max-width:280px"><input type="text" id="sd" inputmode="numeric" maxlength="10" placeholder="NISN (10 digit)" style="max-width:180px"><button id="addS">Tambah</button></div>
-<h2 style="margin-top:14px">Impor dari Excel / Sheets</h2><div class="m">Tempel dua kolom (Nama lalu NISN), satu siswa per baris.</div>
+<div class="c"><h2>Tambah siswa</h2><div class="r"><input type="text" id="sn" placeholder="Nama siswa" style="max-width:280px"><input type="text" id="sd" inputmode="numeric" maxlength="10" placeholder="NISN (10 digit)" style="max-width:180px"><input type="text" id="sa" inputmode="numeric" maxlength="2" placeholder="No. absen" style="max-width:100px"><button id="addS">Tambah</button></div>
+<h2 style="margin-top:14px">Impor dari Excel / Sheets</h2><div class="m">Tempel kolom Nama, NISN, dan (opsional) No. Absen, satu siswa per baris. Jika No. Absen kosong, diisi urut otomatis. No. absen dipakai scanner untuk mengenali siswa (1–99, harus sama dengan yang dihitamkan di LJK).</div>
 <textarea id="it" rows="3"></textarea><div class="r"><button class="g" id="imp">Impor</button></div></div>
 <div class="c"><h2>Daftar siswa <span class="m" id="cnt"></span></h2><div class="tw"><table id="ts"></table></div></div>
 </section>
@@ -82,6 +83,7 @@ nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}[hidden]{display:none!
 const N=40,CW=700,CH=990,L='ABCD',BR=5.7;let FILLC='#222',JIT=0;
 const MK=[[40,40,44],[660,40,30],[660,950,30],[40,950,30]];
 const bub=(q,o)=>[60+Math.floor(q/10)*150+40+o*30,200+(q%10)*52];
+const ABX=200,ABY=[775,815],abBub=(r,d)=>[ABX+d*30,ABY[r]];
 const $=i=>document.getElementById(i);
 const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
 let siswa=ld('lj_siswa',[]),nil=ld('lj_nil',[]),keys=ld('lj_keys',{}),mapel=localStorage.getItem('lj_mapel')||'Pendidikan Pancasila',key=keys[mapel]||'',ttl=ld('lj_ttl',{judul:'LEMBAR JAWABAN SUMATIF AKHIR SEMESTER',smt:'',kelas:'VI',sek:'SD NEGERI 3 SUNGAI DANAU'});
@@ -90,10 +92,13 @@ const canon=m=>MAPEL.find(x=>x.toLowerCase()===String(m).trim().toLowerCase());
 nil.forEach(r=>{const c=canon(r.mapel);if(c)r.mapel=c});
 Object.keys(keys).forEach(k=>{const c=canon(k);if(c&&c!==k){if(keys[c]===undefined)keys[c]=keys[k];delete keys[k]}});
 mapel=canon(mapel)||MAPEL[0];key=keys[mapel]||'';
+const sortS=()=>siswa.sort((a,b)=>(a.absen||999)-(b.absen||999)),freeAbsen=()=>{const u=new Set(siswa.map(s=>s.absen));let n=1;while(u.has(n))n++;return n};
+siswa.forEach(s=>{if(!s.absen)s.absen=freeAbsen()});sortS();
+const absOn=()=>$('absOn').checked;$('absOn').checked=localStorage.getItem('lj_abs')!=='0';$('absOn').onchange=()=>localStorage.setItem('lj_abs',$('absOn').checked?'1':'0');
 function markWrong(c,q,k){const[bx,by]=bub(q,0);c.save();c.fillStyle='#cf222e';c.beginPath();c.arc(bx-42,by,5,0,7);c.fill();
 const o=L.indexOf(k);if(o>=0){const[x,y]=bub(q,o);c.strokeStyle='#1f6feb';c.lineWidth=2;c.setLineDash([4,3]);c.beginPath();c.arc(x,y,12,0,7);c.stroke()}c.restore()}
 const wrongNums=(a,k)=>{k=k||'';return k.length!==N?'':a.map((v,i)=>v!==k[i]?i+1:0).filter(Boolean).join(', ')};
-function drawSheet(c,marks,s){c.setTransform(s,0,0,s,0,0);c.fillStyle='#fff';c.fillRect(0,0,CW,CH);c.fillStyle='#000';
+function drawSheet(c,marks,s,ab){c.setTransform(s,0,0,s,0,0);c.fillStyle='#fff';c.fillRect(0,0,CW,CH);c.fillStyle='#000';
 for(const[x,y,z]of MK)c.fillRect(x-z/2,y-z/2,z,z);
 const ft=(t,px,wt)=>{let f=px;c.font=wt+' '+f+'px sans-serif';while(c.measureText(t).width>540&&f>9){f--;c.font=wt+' '+f+'px sans-serif'}};
 c.textAlign='center';c.fillStyle='#000';
@@ -101,13 +106,19 @@ if(ttl.sek){const t=ttl.sek.toUpperCase();ft(t,13,'bold');c.fillText(t,350,28)}
 const jd=(ttl.judul||'LEMBAR JAWABAN').replace(/\{mapel\}/gi,mapel||'').toUpperCase();ft(jd,20,'bold');c.fillText(jd,350,54);
 const m2='MATA PELAJARAN: '+(mapel?mapel.toUpperCase():'................');ft(m2,16,'bold');c.fillText(m2,350,78);
 const k2=[ttl.kelas?'Kelas '+ttl.kelas:'',ttl.smt].filter(Boolean).join('  |  ');if(k2){ft(k2,13,'normal');c.fillText(k2,350,98)}
-c.font='15px sans-serif';c.textAlign='left';c.fillText('Nama      : ............................................................',110,124);c.fillText('No. Absen : ...........................   Tanggal : ...................',110,150);
+c.font='15px sans-serif';c.textAlign='left';c.fillText('Nama      : ............................................................',110,124);c.fillText('Tanggal   : ............................................................',110,150);
 c.textAlign='center';c.font='bold 14px sans-serif';
 for(let k=0;k<4;k++)for(let o=0;o<4;o++)c.fillText(L[o],bub(k*10,o)[0],176);
 for(let q=0;q<N;q++){const x0=60+Math.floor(q/10)*150;c.textAlign='right';c.font='14px sans-serif';c.fillText(q+1,x0+22,bub(q,0)[1]+5);
 for(let o=0;o<4;o++){const[x,y]=bub(q,o);c.beginPath();c.arc(x,y,BR,0,7);c.lineWidth=2;c.strokeStyle='#000';c.stroke();
 if(marks&&marks[q]===o){c.beginPath();c.arc(x+(Math.random()-.5)*JIT,y+(Math.random()-.5)*JIT,BR-1.1,0,7);c.fillStyle=FILLC;c.fill();c.fillStyle='#000'}}}
-c.textAlign='center';c.font='13px sans-serif';c.fillText('Hitamkan satu bulatan saja per nomor. Jangan melipat/merobek kotak hitam di sudut.',350,760)}
+c.fillStyle='#000';c.textAlign='center';c.font='bold 14px sans-serif';c.fillText('NOMOR ABSEN',335,722);
+c.font='bold 13px sans-serif';for(let d=0;d<10;d++)c.fillText(String(d),ABX+d*30,748);
+c.font='13px sans-serif';c.textAlign='right';c.fillText('Puluhan',ABX-18,ABY[0]+5);c.fillText('Satuan',ABX-18,ABY[1]+5);
+for(let r=0;r<2;r++)for(let d=0;d<10;d++){const[x,y]=abBub(r,d);c.beginPath();c.arc(x,y,BR,0,7);c.lineWidth=2;c.strokeStyle='#000';c.stroke();
+if(ab&&((r===0&&Math.floor(ab/10)===d)||(r===1&&ab%10===d))){c.beginPath();c.arc(x+(Math.random()-.5)*JIT,y+(Math.random()-.5)*JIT,BR-1.1,0,7);c.fillStyle=FILLC;c.fill();c.fillStyle='#000'}}
+c.textAlign='center';c.font='12px sans-serif';c.fillText('Hitamkan 2 digit nomor absen. Contoh absen 7: Puluhan 0 dan Satuan 7. Absen 23: Puluhan 2 dan Satuan 3.',335,850);
+c.font='13px sans-serif';c.fillText('Hitamkan satu bulatan saja per nomor. Jangan melipat/merobek kotak hitam di sudut.',350,890)}
 drawSheet($('sheet').getContext('2d'),null,2);
 function thr(g,w,h,win,k){const W=w+1,I=new Float64Array(W*(h+1));
 for(let y=0;y<h;y++){let r=0;for(let x=0;x<w;x++){r+=g[y*w+x];I[(y+1)*W+x+1]=I[y*W+x+1]+r}}
@@ -150,20 +161,24 @@ for(let y=0;y<CH;y++)for(let x=0;x<CW;x++)wg[y*CW+x]=hg[y*HS*HW+x*HS];
 const mkO=(r0,r1,st)=>{const a=[],R=Math.ceil(r1*HS);for(let j=-R;j<=R;j+=st)for(let i=-R;i<=R;i+=st){const d=Math.hypot(i,j)/HS;if(d>=r0&&d<=r1)a.push(i,j)}return a};
 const ringO=mkO(BR-1,BR+.9,1),outO=mkO(BR+2.6,BR+4.6,2),inO=mkO(0,BR*.68,1);
 const mean=(cx,cy,O)=>{let t=0;for(let k=0;k<O.length;k+=2)t+=hg[(cy+O[k+1])*HW+cx+O[k]];return t/(O.length/2)};
-const D=[];
-for(let q=0;q<N;q++){const B=[0,1,2,3].map(k=>{const[x,y]=bub(q,k);return[Math.round(x*HS),Math.round(y*HS)]});
+const rowD=Bs=>{const B=Bs.map(([x,y])=>[Math.round(x*HS),Math.round(y*HS)]);
 // geser posisi baris (±5 px) agar tepat di atas cincin lingkaran: mengoreksi distorsi lensa / kertas melengkung
 const sc=(dx,dy)=>{let t=0;for(const[x,y]of B)t+=mean(x+dx,y+dy,outO)-mean(x+dx,y+dy,ringO);return t-.4*Math.hypot(dx,dy)/HS*B.length};
 let bs=-1e9,bx=0,by=0;for(let dy=-10;dy<=10;dy+=2)for(let dx=-10;dx<=10;dx+=2){const v=sc(dx,dy);if(v>bs){bs=v;bx=dx;by=dy}}
 const cx0=bx,cy0=by;for(let dy=cy0-1;dy<=cy0+1;dy++)for(let dx=cx0-1;dx<=cx0+1;dx++){const v=sc(dx,dy);if(v>bs){bs=v;bx=dx;by=dy}}
-D.push(B.map(([x,y])=>{const P=mean(x+bx,y+by,outO),M=mean(x+bx,y+by,inO);return Math.max(0,(P-M)/Math.max(P,1))}))}
+return B.map(([x,y])=>{const P=mean(x+bx,y+by,outO),M=mean(x+bx,y+by,inO);return Math.max(0,(P-M)/Math.max(P,1))})};
+const D=[];for(let q=0;q<N;q++)D.push(rowD([0,1,2,3].map(k=>bub(q,k))));
 const all=D.flat().sort((p,q)=>p-q),med=a=>a[a.length>>1],base=med(all),mad=med(all.map(v=>Math.abs(v-base)).sort((p,q)=>p-q)),
 T=base+Math.max(.1,4*1.4826*mad),ans=[],flag=[],fills=D;
 for(let q=0;q<N;q++){const ix=[0,1,2,3].sort((p,r)=>D[q][r]-D[q][p]),d1=D[q][ix[0]],d2=D[q][ix[1]];let a='-',fl=false;
 if(d1>=T){if(d2>=T){if(d2>=.6*d1)a='*';else a=L[ix[0]];fl=true}else a=L[ix[0]]}
 else if(d1>=base+.07&&d1>=1.8*Math.max(d2,.02)){a=L[ix[0]];fl=true}
 ans.push(a);flag.push(fl)}
-return{ans,flag,fills,wg}}
+// nomor absen: 2 baris x 10 bulatan (puluhan, satuan)
+const pick=row=>{const ix=row.map((v,i)=>i).sort((p,r)=>row[r]-row[p]),d1=row[ix[0]],d2=row[ix[1]];return d1<T?-2:(d2>=T&&d2>=.6*d1?-1:ix[0])};
+const abPos=[0,1].map(r=>pick(rowD(Array.from({length:10},(_,d)=>abBub(r,d))))),[pt,po]=abPos;let absen=null,abErr='';
+if(pt===-1||po===-1)abErr='ganda';else if(po===-2)abErr=pt===-2?'kosong':'satuan kosong';else{absen=(pt>=0?pt:0)*10+po;if(absen<1){absen=null;abErr='nol'}}
+return{ans,flag,fills,wg,absen,abErr,abPos}}
 function parseKey(){return key.split('')}
 function nilai(a){const K=parseKey();let r=0,k=0;a.forEach((v,i)=>{if(v==='-')k++;else if(v===K[i])r++});
 return{r,k,s:N-r-k,n:Math.round(r/N*1000)/10}}
@@ -171,6 +186,7 @@ let cur=null;
 function show(){const{ans,flag}=cur,c=$('ov').getContext('2d');if(cur.wg){const im=c.createImageData(CW,CH);for(let i=0;i<CW*CH;i++){const v=cur.wg[i];im.data[4*i]=im.data[4*i+1]=im.data[4*i+2]=v;im.data[4*i+3]=255}c.putImageData(im,0,0)}else drawSheet(c,null,1);c.setTransform(1,0,0,1,0,0);const K=parseKey();c.lineWidth=3;
 for(let q=0;q<N;q++){if(K[q]&&ans[q]!==K[q])markWrong(c,q,K[q]);if(flag[q]){c.strokeStyle='#d29922';c.strokeRect(bub(q,0)[0]-18,bub(q,0)[1]-16,102,32)}
 const o=L.indexOf(ans[q]);if(o>=0){const[x,y]=bub(q,o);c.strokeStyle=ans[q]===K[q]?'#1a7f37':'#cf222e';c.beginPath();c.arc(x,y,9,0,7);c.stroke()}}
+if(cur.abPos){c.strokeStyle='#1f6feb';c.lineWidth=3;cur.abPos.forEach((d,r)=>{if(d>=0){const[x,y]=abBub(r,d);c.beginPath();c.arc(x,y,12,0,7);c.stroke()}})}
 const n=nilai(ans);$('sc').innerHTML='Benar '+n.r+' · Salah '+n.s+' · Kosong '+n.k+' · Nilai <span class="'+(n.n>=70?'ok':'no')+'">'+n.n+'</span>';
 const wn=[];ans.forEach((a,i)=>{if(K[i]&&a!==K[i])wn.push((i+1)+(a==='-'?' (kosong)':a==='*'?' (ganda)':''))});const nf=flag.filter(Boolean).length;
 $('wl').innerHTML=(K.length?(wn.length?'<b class="no">Cek manual: '+wn.length+' nomor salah/kosong/ganda</b><br>'+wn.join(', '):'<b class="ok">Semua jawaban sesuai kunci.</b>'):'<span class="no">Kunci jawaban belum lengkap.</span>')+(nf?'<br><span style="color:var(--wn)">'+nf+' nomor ragu dibaca (kotak kuning).</span>':'');
@@ -189,7 +205,7 @@ let sub='mp',sm='',url=localStorage.getItem('lj_url')||'',tok=localStorage.getIt
 function tab(t){document.querySelectorAll('.tb').forEach(e=>e.hidden=e.id!=='t-'+t);document.querySelectorAll('nav button').forEach(b=>b.className=b.dataset.t===t?'':'g');
 if(t==='reset')fillRm();if(t==='nilai'){rnil();kSync()}if(t==='siswa'){rsis();kSync()}if(t==='scan'){fillSel();fillDl();redraw()}}
 function fillDl(){chips()}
-function fillSel(){$('sw').innerHTML='<option value="">— pilih siswa —</option>'+siswa.map(s=>`<option value="${s.id}">${nil.some(r=>r.sid===s.id&&r.mapel===mapel)?'✓ ':''}${esc(s.nama)} (${s.nisn})</option>`).join('')}
+function fillSel(){$('sw').innerHTML='<option value="">— pilih siswa —</option>'+siswa.map(s=>`<option value="${s.id}">${s.absen||'-'}. ${nil.some(r=>r.sid===s.id&&r.mapel===mapel)?'✓ ':''}${esc(s.nama)} (${s.nisn})</option>`).join('')}
 const kc=()=>{key=$('key').value.toUpperCase().replace(/[^A-D]/g,'');$('kc').textContent=key.length+' / 40 huruf'+(key.length===N?' ✓':' (harus 40)');if(mapel){if((keys[mapel]||'')!==key){keys[mapel]=key;keysTs[mapel]=Date.now();kPush(mapel)}else keys[mapel]=key;persist()}};
 $('key').oninput=kc;
 function setMapel(m){mapel=m;$('mp').value=m;redraw();key=keys[mapel]||'';$('key').value=key;kc();localStorage.setItem('lj_mapel',mapel);fillSel();chips()}
@@ -198,12 +214,16 @@ $('mp').value=mapel;$('key').value=key;kc();
 function redraw(){drawSheet($('sheet').getContext('2d'),null,2)}
 [['tjd','judul'],['tsk','sek'],['tkl','kelas'],['tsm','smt']].forEach(([id,k])=>{$(id).value=ttl[k]||'';$(id).oninput=()=>{ttl[k]=$(id).value;sv_('lj_ttl',ttl);redraw()}});
 window.onbeforeprint=()=>{document.title='LJK '+(mapel||'')};window.onafterprint=()=>{document.title='Koreksi LJK Sumatif'};redraw();chips();
-function addS(nama,nisn){nama=nama.trim();if(!nama)return'Nama kosong';if(!/^\d{10}$/.test(nisn))return'NISN harus 10 digit angka ('+nama+')';if(siswa.some(s=>s.nisn===nisn))return'NISN sudah ada ('+nisn+')';
-const s={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),nama,nisn,sent:false};siswa.push(s);return s}
-$('addS').onclick=()=>{const r=addS($('sn').value,$('sd').value.trim());if(typeof r==='string'){say(r);return}persist();$('sn').value=$('sd').value='';rsis();say('Siswa ditambahkan.');sendS(r)};
-$('imp').onclick=()=>{let ok=0;const er=[],add=[];$('it').value.split('\n').forEach(l=>{if(!l.trim())return;const p=l.split(/\t|;|,/),r=addS(p[0]||'',(p[1]||'').replace(/\D/g,''));typeof r==='string'?er.push(r):(ok++,add.push(r))});
+function addS(nama,nisn,absen){nama=nama.trim();if(!nama)return'Nama kosong';if(!/^\d{10}$/.test(nisn))return'NISN harus 10 digit angka ('+nama+')';if(siswa.some(s=>s.nisn===nisn))return'NISN sudah ada ('+nisn+')';
+let ab=0;if(absen!==undefined&&String(absen).trim()!==''){ab=parseInt(absen);if(!(ab>=1&&ab<=99))return'No. absen harus 1-99 ('+nama+')';if(siswa.some(s=>s.absen===ab))return'No. absen '+ab+' sudah dipakai ('+nama+')'}else ab=freeAbsen();
+const s={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),nama,nisn,absen:ab,sent:false};siswa.push(s);sortS();return s}
+function setAbsen(id,v){const s=siswa.find(x=>x.id===id);if(!s)return;const n=parseInt(v),o=siswa.find(x=>x.id!==id&&x.absen===n);
+if(!(n>=1&&n<=99)){say('No. absen harus 1-99.');rsis();return}if(o){say('No. absen '+n+' sudah dipakai '+o.nama+'.');rsis();return}
+s.absen=n;s.ad=true;sortS();persist();rsis();fillSel();say('No. absen '+s.nama+' = '+n+'.');sendS(s)}
+$('addS').onclick=()=>{const r=addS($('sn').value,$('sd').value.trim(),$('sa').value.trim());if(typeof r==='string'){say(r);return}persist();$('sn').value=$('sd').value=$('sa').value='';rsis();say('Siswa ditambahkan.');sendS(r)};
+$('imp').onclick=()=>{let ok=0;const er=[],add=[];$('it').value.split('\n').forEach(l=>{if(!l.trim())return;const p=l.split(/\t|;|,/),r=addS(p[0]||'',(p[1]||'').replace(/\D/g,''),(p[2]||'').replace(/\D/g,''));typeof r==='string'?er.push(r):(ok++,add.push(r))});
 persist();rsis();$('it').value='';say(ok+' siswa diimpor'+(er.length?'; gagal: '+er.slice(0,4).join(' | '):''));(async()=>{for(const s of add)await sendS(s)})()};
-function rsis(){$('ts').innerHTML='<tr><th>No</th><th>Nama</th><th>NISN</th><th>Sheet</th><th></th></tr>'+siswa.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.nama)}</td><td>${s.nisn}</td><td>${s.sent?'✓':'–'}</td><td><button class="g" onclick="delS('${s.id}')">Hapus</button></td></tr>`).join('');$('cnt').textContent='('+siswa.length+')'}
+function rsis(){$('ts').innerHTML='<tr><th>Absen</th><th>Nama</th><th>NISN</th><th>Sheet</th><th></th></tr>'+siswa.map((s,i)=>`<tr><td><input type="number" min="1" max="99" value="${s.absen||''}" style="width:70px" onchange="setAbsen('${s.id}',this.value)"></td><td>${esc(s.nama)}</td><td>${s.nisn}</td><td>${s.sent?'✓':'–'}</td><td><button class="g" onclick="delS('${s.id}')">Hapus</button></td></tr>`).join('');$('cnt').textContent='('+siswa.length+')'}
 async function delS(id){const s0=siswa.find(s=>s.id===id);if(!s0||!confirm('Hapus siswa ini beserta semua nilainya? (Di Google Sheets juga dihapus jika terhubung)'))return;siswa=siswa.filter(s=>s.id!==id);nil=nil.filter(r=>r.sid!==id);persist();rsis();
 if(url){try{await post({type:'hapusSiswa',nisn:s0.nisn});say('Siswa dihapus (termasuk di Sheets).');lapPush()}catch(e){say('Dihapus di aplikasi, gagal di Sheets: '+e.message)}}}
 async function delN(id){const s0=siswa.find(s=>s.id===id);if(!confirm('Hapus nilai ini? (Di Google Sheets juga dihapus jika terhubung)'))return;nil=nil.filter(r=>!(r.sid===id&&r.mapel===sm));persist();rnil();
@@ -221,9 +241,9 @@ $('rescan').onclick=()=>{$('res').hidden=true;$('msg').textContent='Hasil dibuan
 $('blank').onclick=()=>{const e=cur.edit;cur={ans:Array(N).fill('-'),flag:Array(N).fill(true),wg:cur.wg,edit:e};render(cur)};
 $('cancel').onclick=()=>{cur=null;$('res').hidden=true;$('msg').textContent='Dibatalkan.';if(Q.length)nextQ()};
 function mpM(){const rs=nil.filter(r=>r.mapel===sm),h=['No','Nama','NISN','Benar','Salah','Kosong','Nilai',...Array.from({length:N},(_,i)=>'S'+(i+1))];
-return[h,...siswa.map((s,i)=>{const r=rs.find(x=>x.sid===s.id);return r?[i+1,s.nama,s.nisn,r.r,r.s,r.k,r.n,...r.ans]:[i+1,s.nama,s.nisn]})]}
+return[h,...siswa.map((s,i)=>{const r=rs.find(x=>x.sid===s.id);return r?[s.absen||i+1,s.nama,s.nisn,r.r,r.s,r.k,r.n,...r.ans]:[s.absen||i+1,s.nama,s.nisn]})]}
 function matrix(){const m=mps(),f=(s,x)=>{const r=nil.find(r=>r.sid===s.id&&r.mapel===x);return r?r.n:''};
-const rows=siswa.map((s,i)=>{const v=m.map(x=>f(s,x));return[i+1,s.nama,s.nisn,...v,avg(v.filter(x=>x!==''))]});
+const rows=siswa.map((s,i)=>{const v=m.map(x=>f(s,x));return[s.absen||i+1,s.nama,s.nisn,...v,avg(v.filter(x=>x!==''))]});
 const cm=m.map((x,j)=>avg(rows.map(r=>r[3+j]).filter(v=>v!=='')));
 return[['No','Nama','NISN',...m,'Rata-rata'],...rows,['','Rata-rata kelas','',...cm,avg(cm.filter(v=>v!==''))]]}
 function rnil(){const m=mps();if(!sm||!m.includes(sm))sm=m.includes(mapel)?mapel:m[0]||'';
@@ -231,7 +251,7 @@ $('smb').innerHTML=m.map(x=>`<button class="${x===sm?'':'g'}" data-m="${esc(x)}"
 $('v-mp').hidden=sub!=='mp';$('v-rk').hidden=sub!=='rk';$('s-mp').className=sub==='mp'?'':'g';$('s-rk').className=sub==='rk'?'':'g';
 if(sub==='mp'){const rs=nil.filter(r=>r.mapel===sm),v=rs.map(r=>r.n);
 $('tn').innerHTML='<tr><th>No</th><th>Nama</th><th>NISN</th><th>Benar</th><th>Salah</th><th>Kosong</th><th>Nilai</th><th>No. salah</th><th>Sheet</th><th></th></tr>'+siswa.map((s,i)=>{const r=rs.find(x=>x.sid===s.id);
-return`<tr><td>${i+1}</td><td>${esc(s.nama)}</td><td>${s.nisn}</td>`+(r?`<td>${r.r}</td><td>${r.s}</td><td>${r.k}</td><td><b>${r.n}</b></td><td style="white-space:normal;min-width:130px">${wrongNums(r.ans,keys[sm])||'–'}</td><td>${r.sent?'✓':'–'}</td><td><button class="g" onclick="editN('${r.sid}')">Edit</button> <button class="g" onclick="delN('${r.sid}')">Hapus</button></td>`:'<td colspan="7" class="m">belum dinilai</td>')+'</tr>'}).join('');
+return`<tr><td>${s.absen||i+1}</td><td>${esc(s.nama)}</td><td>${s.nisn}</td>`+(r?`<td>${r.r}</td><td>${r.s}</td><td>${r.k}</td><td><b>${r.n}</b></td><td style="white-space:normal;min-width:130px">${wrongNums(r.ans,keys[sm])||'–'}</td><td>${r.sent?'✓':'–'}</td><td><button class="g" onclick="editN('${r.sid}')">Edit</button> <button class="g" onclick="delN('${r.sid}')">Hapus</button></td>`:'<td colspan="7" class="m">belum dinilai</td>')+'</tr>'}).join('');
 $('ss').textContent=sm?`Dinilai ${rs.length}/${siswa.length} · Rata-rata ${avg(v)} · Tertinggi ${v.length?Math.max(...v):'-'} · Terendah ${v.length?Math.min(...v):'-'}`:'Belum ada nilai. Scan LJK dulu.'}
 else $('tr').innerHTML=matrix().map((r,i)=>'<tr>'+r.map(c=>i?`<td>${esc(c)}</td>`:`<th>${esc(c)}</th>`).join('')+'</tr>').join('')}
 async function cp(M){const t=M.map(r=>r.join('\t')).join('\n');try{await navigator.clipboard.writeText(t);say('Tersalin. Tempel di Google Sheets / Excel.')}catch(e){$('tsv').hidden=false;$('tsv').value=t;$('tsv').select();say('Salin manual dari kotak teks (Ctrl+C).')}}
@@ -240,7 +260,7 @@ $('url').oninput=$('tok').oninput=()=>{url=$('url').value.trim();tok=$('tok').va
 $('url').onchange=$('tok').onchange=()=>kSync();
 let lapT=0;function lapPush(){if(!url)return;clearTimeout(lapT);lapT=setTimeout(async()=>{try{await post({type:'laporan'})}catch(e){}},4000)}
 async function post(p){const res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:tok,...p})});const j=await res.json();if(!j.ok)throw Error(j.error||'ditolak');return j}
-async function sendS(s){if(!url)return;try{await post({type:'siswa',nisn:s.nisn,nama:s.nama});s.sent=true;s.st=Date.now();persist();say('Siswa terkirim ke Sheets.');lapPush()}catch(e){say('Siswa tersimpan, belum terkirim: '+e.message)}rsis()}
+async function sendS(s){if(!url)return;try{await post({type:'siswa',nisn:s.nisn,nama:s.nama,absen:s.absen});s.sent=true;s.ad=false;s.st=Date.now();persist();say('Siswa terkirim ke Sheets.');lapPush()}catch(e){say('Siswa tersimpan, belum terkirim: '+e.message)}rsis()}
 async function sendN(r){const s=siswa.find(x=>x.id===r.sid);if(!url||!s)return;try{await post({type:'nilai',nisn:s.nisn,nama:s.nama,mapel:r.mapel,r:r.r,s:r.s,k:r.k,n:r.n,ans:r.ans,t:r.t||Date.now()});r.sent=true;r.st=Date.now();persist();say('Nilai tersimpan dan terkirim ke Sheets.');lapPush()}catch(e){say('Nilai tersimpan, BELUM terkirim ('+e.message+'). Gunakan "Kirim yang belum terkirim" di menu Spreadsheet.')}}
 $('ping').onclick=async()=>{try{await post({type:'ping'});say('Koneksi ke Apps Script berhasil.')}catch(e){say('Koneksi gagal: '+e.message)}};
 
@@ -262,11 +282,11 @@ let sm_='';
 try{const t0=Date.now(),fresh=localStorage.getItem('lj_surl')!==url,gid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const js=all?{data:all.siswa}:await post({type:'siswaAmbil'}),jn=all?{data:all.nilai}:await post({type:'nilaiAmbil'});
 let sc=0,sd=0,nc=0,nd=0;const rs=new Map(),rn=new Map();
-(js.data||[]).forEach(r=>{const n=String(r.nisn||'').replace(/\D/g,'');if(/^\d{10}$/.test(n))rs.set(n,String(r.nama||'').trim()||n)});
+(js.data||[]).forEach(r=>{const n=String(r.nisn||'').replace(/\D/g,'');if(/^\d{10}$/.test(n))rs.set(n,{nama:String(r.nama||'').trim()||n,absen:parseInt(r.absen)||0,has:r.absen!==undefined})});
 (jn.data||[]).forEach(r=>{const n=String(r.nisn||'').replace(/\D/g,''),m=canon(r.mapel);if(/^\d{10}$/.test(n)&&m&&Array.isArray(r.ans)&&r.ans.length===N)rn.set(n+'|'+m,{nisn:n,nama:String(r.nama||'').trim(),mapel:m,r:+r.r||0,s:+r.s||0,k:+r.k||0,n:+r.n||0,ans:r.ans.map(a=>String(a||'-').slice(0,1)),ts:+r.ts||0})});
-rs.forEach((nm,n)=>{if(!siswa.some(x=>x.nisn===n)){siswa.push({id:gid(),nama:nm,nisn:n,sent:true,st:0});sc++}});
-rn.forEach(R=>{if(!siswa.some(x=>x.nisn===R.nisn)){siswa.push({id:gid(),nama:R.nama||R.nisn,nisn:R.nisn,sent:true,st:0});sc++}});
-for(const x of siswa.slice()){if(rs.has(x.nisn)||[...rn.values()].some(R=>R.nisn===x.nisn)){x.sent=true}
+rs.forEach((v,n)=>{if(!siswa.some(x=>x.nisn===n)){siswa.push({id:gid(),nama:v.nama,nisn:n,absen:v.absen&&!siswa.some(x=>x.absen===v.absen)?v.absen:freeAbsen(),sent:true,st:0});sc++}});
+rn.forEach(R=>{if(!siswa.some(x=>x.nisn===R.nisn)){siswa.push({id:gid(),nama:R.nama||R.nisn,nisn:R.nisn,absen:freeAbsen(),sent:true,st:0});sc++}});
+for(const x of siswa.slice()){if(rs.has(x.nisn)||[...rn.values()].some(R=>R.nisn===x.nisn)){x.sent=true;const rv=rs.get(x.nisn);if(rv&&rv.has&&!x.ad){if(rv.absen&&x.absen!==rv.absen&&!siswa.some(y=>y!==x&&y.absen===rv.absen)){x.absen=rv.absen;sc++}else if(!rv.absen&&x.absen)x.ad=true}}
 else if(x.sent&&x.st>=t0){}
 else if(x.sent&&!fresh){siswa=siswa.filter(y=>y!==x);nil=nil.filter(r=>r.sid!==x.id);sd++}
 else x.sent=false}
@@ -278,8 +298,8 @@ else if(L.sent&&L.ans.join('')===R.ans.join('')&&!L.t)L.t=R.ts});
 for(const L of nil.slice()){const sw=siswa.find(x=>x.id===L.sid);if(!sw||rn.has(sw.nisn+'|'+L.mapel))continue;
 if(L.sent&&L.st>=t0)continue;
 if(L.sent&&!fresh){nil=nil.filter(y=>y!==L);nd++}else L.sent=false}
-persist();
-for(const x of siswa.filter(x=>!x.sent))await sendS(x);
+sortS();persist();
+for(const x of siswa.filter(x=>!x.sent||x.ad))await sendS(x);
 for(const r of nil.filter(r=>!r.sent))await sendN(r);
 localStorage.setItem('lj_surl',url);persist();if(fresh)lapPush();
 if(sc||sd||nc||nd){rsis();fillSel();rnil()}
@@ -305,9 +325,14 @@ cur.edit=false;$('res').hidden=true;$('msg').textContent='Nilai '+rw.n+' masuk D
 async function run(cv,auto){$('msg').textContent='Memproses…';$('res').hidden=true;
 if(!mapel){$('msg').textContent='Pilih mata pelajaran dulu.';return}if(key.length!==N){$('msg').textContent='Isi kunci jawaban 40 huruf dulu.';return}
 try{await new Promise(r=>setTimeout(r,30));const r=scan(cv);const nf=r.flag.filter(Boolean).length,pre=qTot>1?'Lembar '+qNo+' dari '+qTot+'. ':'';
-$('msg').textContent=pre+(nf?'Selesai. '+nf+' nomor perlu dicek (kotak kuning).':'Selesai. Semua nomor terbaca jelas (1 jawaban per nomor).')+(auto?' Siswa dipilih otomatis (berikutnya yang belum dinilai); ganti jika tidak sesuai.':'');
-fillSel();render(r);
-if(auto){const n=siswa.find(s=>!nil.some(x=>x.sid===s.id&&x.mapel===mapel));if(n)$('sw').value=n.id}}catch(e){$('msg').textContent=(qTot>1?'Lembar '+qNo+' dari '+qTot+' gagal: ':'Gagal: ')+e.message+(Q.length?' Tekan "Lewati ke berikutnya" untuk lanjut.':'')}}
+fillSel();render(r);let ab='';
+if(absOn()){const st=r.absen?siswa.find(x=>x.absen===r.absen):null,AM={kosong:'kolom absen kosong','satuan kosong':'digit satuan kosong',ganda:'kolom absen terisi ganda',nol:'nomor 0 tidak valid'};
+if(st){$('sw').value=st.id;ab='Nomor absen '+r.absen+' = '+st.nama+(nil.some(x=>x.sid===st.id&&x.mapel===mapel)?' (sudah punya nilai, menyimpan akan menimpa).':'.')}
+else{if(auto)$('sw').value='';ab=r.absen?'Nomor absen terbaca '+r.absen+' tetapi tidak ada di Data Siswa. Pilih siswa manual.':'Nomor absen tidak terbaca ('+(AM[r.abErr]||r.abErr)+'). Pilih siswa manual.'}}
+else if(auto){const n=siswa.find(x=>!nil.some(y=>y.sid===x.id&&y.mapel===mapel));if(n)$('sw').value=n.id;ab='Siswa dipilih otomatis (berikutnya yang belum dinilai); ganti jika tidak sesuai.'}
+$('ab').innerHTML=ab?'<b>'+esc(ab)+'</b>':'';
+$('msg').textContent=pre+(nf?'Selesai. '+nf+' nomor perlu dicek (kotak kuning). ':'Selesai. Semua nomor terbaca jelas. ')+ab}
+catch(e){$('msg').textContent=(qTot>1?'Lembar '+qNo+' dari '+qTot+' gagal: ':'Gagal: ')+e.message+(Q.length?' Tekan "Lewati ke berikutnya" untuk lanjut.':'')}}
 let Q=[],qTot=0,qNo=0;
 const isPdf=f=>f.type==='application/pdf'||/\.pdf$/i.test(f.name),PDFV='3.11.174';
 function loadPdfJs(){if(window.pdfjsLib)return Promise.resolve();return new Promise((ok,no)=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+PDFV+'/pdf.min.js';
@@ -330,11 +355,11 @@ $('qskip').onclick=()=>nextQ();$('qstop').onclick=()=>{Q=[];qUi();$('res').hidde
 $('test').onclick=async()=>{$('msg').textContent='Menguji…';await new Promise(r=>setTimeout(r,30));let ok=0,tot=0,err=[];
 const sv=key;key='A'.repeat(N);
 for(let t=0;t<4;t++){const m=Array.from({length:N},(_,i)=>Math.random()<.05?-1:Math.floor(Math.random()*4));
-FILLC=['#222','#9a9a9a','#222','#b0b0b0'][t];JIT=[0,2,4,4][t];const sc=document.createElement('canvas');sc.width=CW;sc.height=CH;drawSheet(sc.getContext('2d'),m,1);FILLC='#222';JIT=0;
+FILLC=['#222','#9a9a9a','#222','#b0b0b0'][t];JIT=[0,2,4,4][t];const sc=document.createElement('canvas');sc.width=CW;sc.height=CH;const ab=1+Math.floor(Math.random()*40);drawSheet(sc.getContext('2d'),m,1,ab);FILLC='#222';JIT=0;
 const bg=document.createElement('canvas');bg.width=1100;bg.height=1400;const c=bg.getContext('2d');c.fillStyle='#8a8a8a';c.fillRect(0,0,1100,1400);
 c.translate(550+(Math.random()-.5)*60,700);c.rotate([.07,-.25,Math.PI+.05,Math.PI/2-.04][t]);const z=[1.25,1.1,1.25,1][t];c.scale(z,z);c.drawImage(sc,-350,-495);c.setTransform(1,0,0,1,0,0);
 const gr=c.createLinearGradient(0,0,1100,0);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.35)');c.fillStyle=gr;c.fillRect(0,0,1100,1400);
-try{const r=scan(bg);m.forEach((v,i)=>{tot++;if(r.ans[i]===(v<0?'-':L[v]))ok++;else err.push('T'+(t+1)+' no'+(i+1))})}catch(e){tot+=N;err.push('T'+(t+1)+': '+e.message)}}
+try{const r=scan(bg);m.forEach((v,i)=>{tot++;if(r.ans[i]===(v<0?'-':L[v]))ok++;else err.push('T'+(t+1)+' no'+(i+1))});tot++;if(r.absen===ab)ok++;else err.push('T'+(t+1)+' absen '+ab+'→'+r.absen)}catch(e){tot+=N;err.push('T'+(t+1)+': '+e.message)}}
 key=sv;$('msg').innerHTML='<b class="'+(ok===tot?'ok':'no')+'">Uji akurasi: '+ok+' / '+tot+' benar</b> (4 simulasi: miring 4°, miring 14°, terbalik, diputar 90°, dengan bayangan)'+(err.length?'<br>Salah: '+err.slice(0,8).join(', '):'')};
 tab('scan');
 </script>
@@ -346,7 +371,7 @@ let stream=null,facing='environment',timer=0,busy=false,state='scan',stable=0,la
 const has=id=>nil.some(r=>r.sid===id&&r.mapel===mapel);
 const nm=id=>{const s=siswa.find(x=>x.id===id);return s?s.nama:''};
 const nextS=cur=>{const i=cur?siswa.findIndex(s=>s.id===cur):-1;const ord=[...siswa.slice(i+1),...siswa.slice(0,i+1)];const f=ord.find(s=>s.id!==cur&&!has(s.id));return f?f.id:null};
-function fillCsw(){const s=$('camS'),c=s.value;s.innerHTML='<option value="">— pilih siswa —</option>'+siswa.map(x=>`<option value="${x.id}">${has(x.id)?'✓ ':''}${esc(x.nama)} (${x.nisn})</option>`).join('');if(c&&siswa.some(x=>x.id===c))s.value=c}
+function fillCsw(){const s=$('camS'),c=s.value;s.innerHTML='<option value="">— pilih siswa —</option>'+siswa.map(x=>`<option value="${x.id}">${x.absen||'-'}. ${has(x.id)?'✓ ':''}${esc(x.nama)} (${x.nisn})</option>`).join('');if(c&&siswa.some(x=>x.id===c))s.value=c}
 const _fs=fillSel;fillSel=function(){_fs();fillCsw()};
 const _tb=tab;tab=function(t){if(t!=='scan')close();_tb(t)};
 
@@ -374,7 +399,7 @@ const vw=V.videoWidth,vh=V.videoHeight;if(!vw||!dx)return;
 dx.drawImage(V,0,0,dc.width,dc.height);
 const p=detect(dc.width,dc.height);
 oc.clearRect(0,0,vw,vh);
-if(state==='wait'){if(p)gone=0;else if(++gone>=3){state='scan';stable=0;last=null;const sid=$('camS').value;stt(sid?'Siap. Tampilkan lembar milik '+nm(sid)+'.':'Pilih siswa lalu tampilkan lembar.')}return}
+if(state==='wait'){if(p)gone=0;else if(++gone>=3){state='scan';stable=0;last=null;const sid=$('camS').value;if(absOn())stt('Siap. Tampilkan lembar berikutnya (siswa dikenali dari nomor absen).');else stt(sid?'Siap. Tampilkan lembar milik '+nm(sid)+'.':'Pilih siswa lalu tampilkan lembar.')}return}
 if(!p){stable=0;last=null;guide(vw,vh);stt('Mencari 4 kotak hitam sudut… posisikan lembar dalam bingkai.');return}
 const sc=1/ds,q=p.map(e=>({x:e.x*sc,y:e.y*sc}));
 const ed=[0,1,2,3].map(i=>Math.hypot(q[(i+1)%4].x-q[i].x,q[(i+1)%4].y-q[i].y));
@@ -387,15 +412,15 @@ if(ok){if(last){const dm=Math.max(...q.map((e,i)=>Math.hypot(e.x-last[i].x,e.y-l
 draw(q,!ok?'#cf222e':stable>=NEED?'#1a7f37':'#d29922');
 if(!ok){stt(msg);return}
 if(stable<NEED){stt('Lembar terdeteksi. Tahan kamera tetap… '+stable+'/'+NEED);return}
-const sid=$('camS').value;
+if(!absOn()){const sid=$('camS').value;
 if(!sid){stt('Pilih siswa dulu.');return}
-if(has(sid)){stt(nm(sid)+' sudah punya nilai. Pilih siswa lain, atau tekan "Ambil sekarang" untuk menimpa.');return}
-grab()}
+if(has(sid)){stt(nm(sid)+' sudah punya nilai. Pilih siswa lain, atau tekan "Ambil sekarang" untuk menimpa.');return}}
+grab(false)}
 
-async function grab(){
+async function grab(manual){
 if(state==='proc')return;
 if(key.length!==N){stt('Kunci jawaban belum 40 huruf.');return}
-const sid=$('camS').value;if(!sid){stt('Pilih siswa dulu.');return}
+if(!absOn()&&!$('camS').value){stt('Pilih siswa dulu.');return}
 state='proc';stt('Memproses… tahan kamera tetap.');
 const vw=V.videoWidth,vh=V.videoHeight,c=document.createElement('canvas');c.width=vw;c.height=vh;const cx=c.getContext('2d'),rs=[];let er='';
 for(let i=0;i<3;i++){cx.drawImage(V,0,0,vw,vh);try{rs.push(scan(c))}catch(e){er=e.message}await sleep(80)}
@@ -407,17 +432,21 @@ const e=Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
 ans.push(e[0][1]>=2?e[0][0]:'*');flag.push(rs.some(r=>r.flag[q])||e.length>1||e[0][1]<2)}
 const terbaca=ans.filter(a=>a!=='-'&&a!=='*').length;
 if(terbaca<5){state='scan';stable=0;last=null;stt('Hanya '+terbaca+' jawaban terbaca. Periksa cahaya dan posisi, lalu coba lagi.');return}
+let sid=$('camS').value,byAbs=0;
+if(absOn()){const cn={};rs.forEach(r=>{if(r.absen)cn[r.absen]=(cn[r.absen]||0)+1});const e=Object.entries(cn).sort((a,b)=>b[1]-a[1]),av=e.length&&e[0][1]>=2?+e[0][0]:0,st=av?siswa.find(x=>x.absen===av):null;
+if(st){sid=st.id;byAbs=av;$('camS').value=sid;if(has(sid)&&!manual){beep();state='wait';gone=0;stt(nm(sid)+' (absen '+av+') sudah punya nilai. Angkat lembar; tekan "Ambil sekarang" jika ingin menimpa.');return}}
+else if(!(manual&&sid)){state='scan';stable=0;last=null;stt(av?'Nomor absen '+av+' tidak ada di Data Siswa.':'Nomor absen tidak terbaca. Pastikan 2 digit absen dihitamkan, atau matikan "Kenali siswa otomatis" untuk memilih siswa manual.');return}}
 const ow=has(sid),rw={sid,mapel,...nilai(ans),ans:ans.slice(),sent:false,t:Date.now()},ex=nil.findIndex(r=>r.sid===sid&&r.mapel===mapel);
 if(ex>=0)nil[ex]=rw;else nil.push(rw);persist();
 lastSid=sid;beep();showRes(rw,{ans,flag,wg:rs[0].wg},ow);sendN(rw);fillSel();
-let m='Tersimpan: '+nm(sid)+' = '+rw.n+'. ';
-if($('camA').checked){const n=nextS(sid);if(n){$('camS').value=n;m+='Berikutnya: '+nm(n)+'. Angkat lembar ini, lalu tampilkan lembar berikutnya.'}else m+='Semua siswa sudah dinilai.'}else m+='Angkat lembar ini.';
+let m='Tersimpan: '+nm(sid)+(byAbs?' (absen '+byAbs+')':'')+' = '+rw.n+'. ';
+if(!byAbs&&$('camA').checked){const n=nextS(sid);if(n){$('camS').value=n;m+='Berikutnya: '+nm(n)+'. Angkat lembar ini, lalu tampilkan lembar berikutnya.'}else m+='Semua siswa sudah dinilai.'}else m+=byAbs?'Angkat lembar ini, lalu tampilkan lembar siswa berikutnya.':'Angkat lembar ini.';
 state='wait';gone=0;stt(m)}
 
 function showRes(rw,r,ow){
 const nf=r.flag.filter(Boolean).length;
 $('camRes').hidden=false;
-$('crN').textContent=nm(rw.sid)+' · '+mapel;
+{const sw=siswa.find(x=>x.id===rw.sid);$('crN').textContent=(sw&&sw.absen?'Absen '+sw.absen+' · ':'')+nm(rw.sid)+' · '+mapel}
 $('crS').innerHTML='<span class="m" style="font-size:13px;font-weight:400">Nilai (skala 0–100)</span><br><span class="'+(rw.n>=70?'ok':'no')+'">'+rw.n+'</span>';
 $('crD').innerHTML='Benar <b>'+rw.r+'</b> dari '+N+' · Salah '+rw.s+' · Kosong '+rw.k+'<br><b class="no">'+(wrongNums(rw.ans,key)?'Salah: no. '+wrongNums(rw.ans,key):'')+'</b><br><span class="m">Tersimpan ke Daftar Nilai '+esc(mapel)+(ow?' (menimpa nilai lama)':'')+(nf?' · '+nf+' nomor ragu, periksa jika perlu':'')+'</span>';
 const c=$('crT').getContext('2d'),im=c.createImageData(CW,CH);
@@ -463,7 +492,7 @@ await start();$('camBox').scrollIntoView({block:'nearest'})}
 
 $('camOpen').onclick=open;
 $('camX').onclick=close;
-$('camG').onclick=()=>{if(!stream||state==='proc')return;grab()};
+$('camG').onclick=()=>{if(!stream||state==='proc')return;grab(true)};
 $('camF').onclick=()=>{facing=facing==='environment'?'user':'environment';start()};
 $('camT').onclick=async()=>{if(!stream)return;torchOn=!torchOn;try{await stream.getVideoTracks()[0].applyConstraints({advanced:[{torch:torchOn}]})}catch(e){torchOn=!torchOn}};
 $('camE').onclick=()=>{if(!lastSid)return;const id=lastSid;close();sm=mapel;editN(id)};
